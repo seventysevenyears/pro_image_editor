@@ -176,6 +176,7 @@ class LayerCopyManager {
       id: enableCopyId ? layer.id : null,
       key: enableCopyKey ? layer.key : null,
       widget: layer.widget,
+      width: layer.width,
       offset: Offset(
         layer.offset.dx + offset.dx,
         layer.offset.dy + offset.dy,

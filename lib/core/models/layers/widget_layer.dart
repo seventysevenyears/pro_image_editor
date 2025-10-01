@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../../shared/utils/parser/double_parser.dart';
 import '/core/constants/int_constants.dart';
 import '/core/platform/io/io_helper.dart';
 import '/shared/services/import_export/types/widget_loader.dart';
@@ -31,6 +32,7 @@ class WidgetLayer extends Layer {
   /// The [widget] parameter is required, and other properties are optional.
   WidgetLayer({
     required this.widget,
+    this.width,
     super.offset,
     super.rotation,
     super.scale,
@@ -124,6 +126,9 @@ class WidgetLayer extends Layer {
       meta: layer.meta,
       groupId: layer.groupId,
       widget: widget,
+      width: map[keyConverter('width')] != null
+          ? safeParseDouble(map[keyConverter('width')])
+          : null,
       exportConfigs: exportConfigs,
       boxConstraints: layer.boxConstraints,
     );
@@ -131,6 +136,12 @@ class WidgetLayer extends Layer {
 
   /// The widget to display on the layer.
   Widget widget;
+
+  /// The width of the widget layer.
+  ///
+  /// If specified, this width will be used instead of the default
+  /// `initWidth` from `StickerEditorConfigs`.
+  double? width;
 
   /// Configuration settings for exporting a widget layer.
   ///
@@ -161,6 +172,7 @@ class WidgetLayer extends Layer {
         enableMinify: enableMinify,
       ),
       if (recordPosition != null) 'recordPosition': recordPosition,
+      if (width != null) 'width': width,
       if (exportConfigMap.isNotEmpty) 'exportConfigs': exportConfigMap,
       'type': 'widget',
     };
@@ -188,6 +200,7 @@ class WidgetLayer extends Layer {
   /// will default to the current instance's values.
   WidgetLayer copyWith({
     Widget? widget,
+    double? width,
     Offset? offset,
     double? rotation,
     double? scale,
@@ -200,6 +213,7 @@ class WidgetLayer extends Layer {
   }) {
     return WidgetLayer(
       widget: widget ?? this.widget,
+      width: width ?? this.width,
       offset: offset ?? this.offset,
       rotation: rotation ?? this.rotation,
       scale: scale ?? this.scale,
