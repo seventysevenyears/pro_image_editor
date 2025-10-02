@@ -1,6 +1,9 @@
 /// A path to a demo image asset in the project.
 final String kImageEditorExampleAssetPath = 'assets/demo.png';
 
+/// A path to a black template image asset in the project.
+final String kBlackTemplateAssetPath = 'assets/black_template.png';
+
 /// A URL to a demo image hosted on a remote server.
 final String kImageEditorExampleNetworkUrl =
     'https://picsum.photos/id/230/2000';

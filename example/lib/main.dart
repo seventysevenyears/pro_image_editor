@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:bot_toast/bot_toast.dart';
 import 'package:example/shared/widgets/not_found_example.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,18 +15,20 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'core/constants/example_constants.dart';
 import 'core/constants/example_list_constant.dart';
+import 'features/simple_file_editor.dart';
+import 'features/template_editor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Necessary initialization for package:media_kit.
-  MediaKit.ensureInitialized();
+  // MediaKit.ensureInitialized();
 
-  await Supabase.initialize(
-    url: 'SUPABASE_URL',
-    anonKey: 'SUPABASE_ANON_KEY',
-    debug: false,
-  );
+  // await Supabase.initialize(
+  //   url: 'SUPABASE_URL',
+  //   anonKey: 'SUPABASE_ANON_KEY',
+  //   debug: false,
+  // );
 
   runApp(const MyApp());
 }
@@ -61,7 +67,9 @@ class MyApp extends StatelessWidget {
           builder: (_) => kImageEditorExamples[index].page,
         );
       },
-      home: const MyHomePage(),
+      home: const TemplateEditor(),
+      //home: const MyHomePage(),
+      //home: const AutoFilePickerPage(),
     );
   }
 }
@@ -314,3 +322,81 @@ class _MyHomePageState extends State<MyHomePage> {
 
 /// It's handy to then extract the Supabase client in a variable for later uses
 final supabase = Supabase.instance.client;
+
+/// A page that automatically shows a file picker when the app starts
+class AutoFilePickerPage extends StatefulWidget {
+  const AutoFilePickerPage({super.key});
+
+  @override
+  State<AutoFilePickerPage> createState() => _AutoFilePickerPageState();
+}
+
+class _AutoFilePickerPageState extends State<AutoFilePickerPage> {
+  @override
+  void initState() {
+    super.initState();
+    // 앱이 시작되면 자동으로 파일 선택기 실행
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pickImageFile();
+    });
+  }
+
+  Future<void> _pickImageFile() async {
+    if (kIsWeb) {
+      // 웹에서는 파일 선택기가 작동하지 않으므로 기본 홈페이지로 이동
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MyHomePage()),
+      );
+      return;
+    }
+
+    try {
+      FilePickerResult? result =
+          await FilePicker.platform.pickFiles(type: FileType.image);
+
+      if (result != null && context.mounted) {
+        File file = File(result.files.single.path!);
+        await precacheImage(FileImage(file), context);
+        if (!context.mounted) return;
+
+        // 이미지 에디터로 바로 이동
+        await Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => SimpleFileEditor(file: file)),
+        );
+      } else {
+        // 사용자가 파일 선택을 취소한 경우 기본 홈페이지로 이동
+        if (context.mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const MyHomePage()),
+          );
+        }
+      }
+    } catch (e) {
+      // 에러 발생 시 기본 홈페이지로 이동
+      if (context.mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MyHomePage()),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('이미지 선택'),
+      ),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('이미지를 선택해주세요...'),
+          ],
+        ),
+      ),
+    );
+  }
+}

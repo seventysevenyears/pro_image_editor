@@ -54,6 +54,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/black.png
     - assets/demo.png
     - assets/demo.mp4
     - assets/frame.png
