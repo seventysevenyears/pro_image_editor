@@ -1,3 +1,6 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+// TODO: Remove the deprecated values when releasing version 12.0.0.
+
 import '/features/tune_editor/models/tune_adjustment_item.dart';
 import '../custom_widgets/tune_editor_widgets.dart';
 import '../icons/tune_editor_icons.dart';
@@ -24,6 +27,10 @@ class TuneEditorConfigs implements BaseSubEditorConfigs {
   /// - [safeArea] defines the safe area configuration for the editor interface.
   const TuneEditorConfigs({
     this.enableGesturePop = true,
+    @Deprecated(
+      'Use tools inside MainEditorConfigs instead, e.g. tools: '
+      '[SubEditorMode.tune]',
+    )
     this.enabled = true,
     this.showLayers = true,
     this.tuneAdjustmentOptions,
@@ -40,6 +47,10 @@ class TuneEditorConfigs implements BaseSubEditorConfigs {
   /// Indicates whether the tune editor is enabled.
   ///
   /// When this is `false`, the tune editor features will be disabled.
+  @Deprecated(
+    'Use tools inside MainEditorConfigs instead, e.g. tools: '
+    '[SubEditorMode.tune]',
+  )
   final bool enabled;
 
   /// Specifies whether the layers should be visible in the editor.

@@ -1,4 +1,5 @@
-// Project imports:
+// ignore_for_file: deprecated_member_use_from_same_package
+// TODO: Remove the deprecated values when releasing version 12.0.0.
 
 import 'dart:ui';
 
@@ -48,6 +49,10 @@ class EmojiEditorConfigs
   const EmojiEditorConfigs({
     this.layerFractionalOffset = const Offset(-0.5, -0.5),
     this.enableGesturePop = true,
+    @Deprecated(
+      'Use tools inside MainEditorConfigs instead, e.g. tools: '
+      '[SubEditorMode.emoji]',
+    )
     this.enabled = true,
     this.enablePreloadWebFont = true,
     this.initScale = 5.0,
@@ -70,6 +75,10 @@ class EmojiEditorConfigs
   final bool enableGesturePop;
 
   /// Indicates whether the emoji editor is enabled.
+  @Deprecated(
+    'Use tools inside MainEditorConfigs instead, e.g. tools: '
+    '[SubEditorMode.emoji]',
+  )
   final bool enabled;
 
   /// Indicates whether the web font should be preloaded on web platforms.
