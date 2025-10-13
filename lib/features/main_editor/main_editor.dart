@@ -768,6 +768,8 @@ class ProImageEditorState extends State<ProImageEditor>
         fractionalOffset = paintEditorConfigs.layerFractionalOffset;
       } else if (layer.isWidgetLayer) {
         fractionalOffset = stickerEditorConfigs.layerFractionalOffset;
+      } else if (layer.isTemplateLayer) {
+        fractionalOffset = templateEditorConfigs.layerFractionalOffset;
       }
 
       if (fractionalOffset != const Offset(-0.5, -0.5)) {

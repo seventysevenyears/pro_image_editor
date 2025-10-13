@@ -1,13 +1,16 @@
 // Dart imports:
 import 'dart:io';
 import 'dart:convert';
+import 'dart:math';
 
 // Flutter imports:
+import 'package:align_positioned/align_positioned.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:google_fonts/google_fonts.dart';
+import 'package:pro_image_editor/features/text_editor/widgets/rounded_background_text/rounded_background_text.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
@@ -28,8 +31,10 @@ class TemplateEditor extends StatefulWidget {
 
 class _TemplateEditorState extends State<TemplateEditor>
     with ExampleHelperState<TemplateEditor> {
+  final GlobalKey<ProImageEditorState> _key = GlobalKey<ProImageEditorState>();
   bool _ignorePlatformIssue = false;
   bool _templateCreated = false;
+  TextEditorConfigs textEditorConfigs = TextEditorConfigs();
 
   @override
   void initState() {
@@ -42,6 +47,18 @@ class _TemplateEditorState extends State<TemplateEditor>
       _templateCreated = true;
     });
     preCacheImage(assetPath: 'assets/black.png');
+    textEditorConfigs = TextEditorConfigs(
+      showSelectFontStyleBottomBar: true,
+      customTextStyles: [
+        GoogleFonts.roboto(),
+        GoogleFonts.averiaLibre(),
+        GoogleFonts.lato(),
+        GoogleFonts.comicNeue(),
+        GoogleFonts.actor(),
+        GoogleFonts.odorMeanChey(),
+        GoogleFonts.nabla(),
+      ],
+    );
   }
 
   Future<String> _getTemplatesDirectory() async {
@@ -51,6 +68,101 @@ class _TemplateEditorState extends State<TemplateEditor>
       await templatesDir.create(recursive: true);
     }
     return templatesDir.path;
+  }
+
+  /// JSON 템플릿을 수정하는 함수
+  /// references의 모든 내용을 새로운 "A" 위젯의 meta에 복사
+  Map<String, dynamic>? _modifyTemplateJson(Map<String, dynamic> jsonMap) {
+    try {
+      // references 키 확인
+      if (!jsonMap.containsKey('references')) {
+        print('\n=== 에러 ===');
+        print('references 키가 존재하지 않습니다!');
+
+        final jsonDetail = const JsonEncoder.withIndent('  ').convert(jsonMap);
+        final lines = jsonDetail.split('\n');
+        for (final line in lines) {
+          print(line);
+        }
+        return null;
+      }
+      final references = jsonMap['references'] as Map<String, dynamic>;
+
+      // 기존 references의 모든 내용을 copyList에 저장
+      final copyList = Map<String, dynamic>.from(references);
+
+      // copyList의 모든 x, y 값에서 절대값 기준 최대값 찾기
+      double maxAbsX = 0;
+      double maxAbsY = 0;
+
+      copyList.forEach((key, value) {
+        if (value is Map<String, dynamic>) {
+          final x = (value['x'] as num?)?.toDouble() ?? 0;
+          final y = (value['y'] as num?)?.toDouble() ?? 0;
+
+          final absX = x.abs();
+          final absY = y.abs();
+
+          if (absX > maxAbsX) maxAbsX = absX;
+          if (absY > maxAbsY) maxAbsY = absY;
+        }
+      });
+
+      print('\n=== copyList 절대값 최대 좌표 ===');
+      print('최대 절대값 X: $maxAbsX');
+      print('최대 절대값 Y: $maxAbsY');
+      var width = maxAbsX * 2;
+      var height = maxAbsY * 2;
+      if (width < 100) width = 100;
+      if (height < 100) height = 100;
+      // 기존 references 내용을 모두 삭제
+      references.clear();
+
+      // 새로운 "A" 객체 생성 및 copyList를 meta에 저장
+      references['A'] = {
+        'x': 0,
+        'y': 0,
+        'rotation': 0,
+        'scale': 1,
+        'flipX': false,
+        'flipY': false,
+        'interaction': {
+          'enableMove': true,
+          'enableScale': true,
+          'enableRotate': true,
+          'enableSelection': true,
+          'enableEdit': true,
+        },
+        'type': 'template',
+        'exportConfigs': {
+          'id': 'template-0',
+          'width': width,
+          'height': height,
+          'meta': copyList, // 원본 references를 copyList로 저장
+        },
+      };
+
+      // historys의 layers를 {"id": "A"}로 교체
+      if (jsonMap.containsKey('history') && jsonMap['history'] is List) {
+        final historys = jsonMap['history'] as List;
+
+        for (var history in historys) {
+          if (history is Map<String, dynamic> &&
+              history.containsKey('layers')) {
+            // layers를 {"id": "A"}로 교체
+            history['layers'] = [
+              {'id': 'A'}
+            ];
+          }
+        }
+      }
+
+      return jsonMap;
+    } catch (e) {
+      print('=== JSON 수정 실패 ===');
+      print('에러: $e');
+      return null;
+    }
   }
 
   Future<void> _saveTemplate() async {
@@ -63,6 +175,7 @@ class _TemplateEditorState extends State<TemplateEditor>
         configs: const ExportEditorConfigs(
           historySpan: ExportHistorySpan.current,
           maxDecimalPlaces: 3,
+          enableMinify: false,
         ),
       );
 
@@ -116,12 +229,52 @@ class _TemplateEditorState extends State<TemplateEditor>
       // Read JSON file
       final file = File(selectedFile);
       final jsonString = await file.readAsString();
-      final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+      var jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+
+      // JSON 수정 적용
+      final modifiedJson = _modifyTemplateJson(jsonMap);
+      if (modifiedJson == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('에러: references 키가 존재하지 않습니다'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+      jsonMap = modifiedJson;
+
+      final jsonDetail = const JsonEncoder.withIndent('  ').convert(jsonMap);
+      final lines = jsonDetail.split('\n');
+      for (final line in lines) {
+        print(line);
+      }
 
       final history = ImportStateHistory.fromMap(
         jsonMap,
-        configs: const ImportEditorConfigs(
+        configs: ImportEditorConfigs(
           recalculateSizeAndPosition: true,
+          widgetLoader: (
+            String id, {
+            Map<String, dynamic>? meta,
+          }) {
+            return widgetCustomLoader(id, meta: meta);
+
+            // switch (id) {
+            //   case 'my-special-container':
+            //     return Container(
+            //       width: 100,
+            //       height: 100,
+            //       color: Colors.amber,
+            //     );
+
+            //   /// ... other widgets
+            // }
+            // throw ArgumentError(
+            //   'No widget found for the given id: $id',
+            // );
+          },
         ),
       );
 
@@ -176,42 +329,41 @@ class _TemplateEditorState extends State<TemplateEditor>
 
       if (selectedFile == null || !mounted) return;
 
-      // Read and print JSON file
+      // Read and modify JSON file
       final file = File(selectedFile);
       final jsonString = await file.readAsString();
-      final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+      var jsonMap = json.decode(jsonString) as Map<String, dynamic>;
 
-      print('=== 선택된 템플릿 파일 ===');
+      print('=== 원본 템플릿 파일 ===');
       print('파일 경로: $selectedFile');
       print('파일명: ${selectedFile.split('/').last.split('\\').last}');
-      print('\n=== JSON 내용 ===');
-      print(const JsonEncoder.withIndent('  ').convert(jsonMap));
-      print('\n=== 레이어 정보 ===');
 
-      if (jsonMap.containsKey('layers')) {
-        final layers = jsonMap['layers'] as List;
-        print('총 레이어 개수: ${layers.length}');
-        for (int i = 0; i < layers.length; i++) {
-          final layer = layers[i] as Map<String, dynamic>;
-          print('\n레이어 $i:');
-          print('  타입: ${layer['type']}');
-          if (layer.containsKey('text')) {
-            print('  텍스트: ${layer['text']}');
-          }
-          if (layer.containsKey('offset')) {
-            print('  위치: ${layer['offset']}');
-          }
-          if (layer.containsKey('scale')) {
-            print('  크기: ${layer['scale']}');
-          }
-        }
+      // JSON 수정 적용
+      final modifiedJson = _modifyTemplateJson(jsonMap);
+      if (modifiedJson == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('에러: references 키가 존재하지 않습니다'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+      jsonMap = modifiedJson;
+
+      print('\n=== 수정된 JSON 내용 ===');
+      final jsonDetail = const JsonEncoder.withIndent('  ').convert(jsonMap);
+      final lines = jsonDetail.split('\n');
+      for (final line in lines) {
+        print(line);
       }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              '템플릿 로드 완료: ${selectedFile.split('/').last.split('\\').last}'),
+              '템플릿 변환 완료: ${selectedFile.split('/').last.split('\\').last}'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -479,18 +631,7 @@ class _TemplateEditorState extends State<TemplateEditor>
         stateHistory: StateHistoryConfigs(
           initStateHistory: _loadedHistory,
         ),
-        textEditor: TextEditorConfigs(
-          showSelectFontStyleBottomBar: true,
-          customTextStyles: [
-            GoogleFonts.roboto(),
-            GoogleFonts.averiaLibre(),
-            GoogleFonts.lato(),
-            GoogleFonts.comicNeue(),
-            GoogleFonts.actor(),
-            GoogleFonts.odorMeanChey(),
-            GoogleFonts.nabla(),
-          ],
-        ),
+        textEditor: textEditorConfigs,
         emojiEditor: EmojiEditorConfigs(
           enabled: false,
         ),
@@ -516,6 +657,169 @@ class _TemplateEditorState extends State<TemplateEditor>
           enabled: false,
         ),
       ),
+    );
+  }
+
+  Widget widgetCustomLoader(String id, {Map<String, dynamic>? meta}) {
+    print('\n=== widgetCustomLoader 호출 ===');
+    print('id: $id');
+
+    List<TextLayer> textLayers = [];
+
+    // 바운딩 박스 관련 변수 미리 선언
+    double minX = 0;
+    double maxX = 0;
+    double minY = 0;
+    double maxY = 0;
+    double totalWidth = 0;
+    double totalHeight = 0;
+    double centerX = 0;
+    double centerY = 0;
+
+    if (meta != null && meta.isNotEmpty) {
+      // print('\n=== meta 값들 ===');
+      meta.forEach((key, value) {
+        textLayers.add(
+            Layer.fromMap(value as Map<String, dynamic>, id: key) as TextLayer);
+        print('키: $key');
+        print('값: $value');
+        // print('타입: ${value.runtimeType}');
+
+        // // Map 타입인 경우 내부 내용도 출력
+        // if (value is Map<String, dynamic>) {
+        //   print('  상세 내용:');
+        //   value.forEach((subKey, subValue) {
+        //     print('    $subKey: $subValue');
+        //   });
+        // }
+        // print('---');
+      });
+
+      // 모든 레이어를 포함하는 바운딩 박스 계산
+      if (textLayers.isNotEmpty) {
+        double maxAbsX = 0;
+        double maxAbsY = 0;
+
+        for (var layer in textLayers) {
+          // 각 레이어의 위치 (x, y)
+          final x = layer.offset.dx;
+          final y = layer.offset.dy;
+
+          // 절대값으로 가장 큰 값 찾기
+          final absX = x.abs();
+          final absY = y.abs();
+
+          if (absX > maxAbsX) maxAbsX = absX;
+          if (absY > maxAbsY) maxAbsY = absY;
+        }
+
+        totalWidth = maxAbsX * 2;
+        totalHeight = maxAbsY * 2;
+        centerX = 0;
+        centerY = 0;
+        if (totalWidth < 100) totalWidth = 100;
+        if (totalHeight < 100) totalHeight = 100;
+
+        print('\n=== 바운딩 박스 정보 ===');
+        print('중간점 (centerX, centerY): ($centerX, $centerY)');
+        print('전체 가로 길이: $totalWidth');
+        print('전체 세로 길이: $totalHeight');
+        print('최소 X: $minX, 최대 X: $maxX');
+        print('최소 Y: $minY, 최대 Y: $maxY');
+      }
+    } else {
+      print('meta가 null이거나 비어있습니다');
+    }
+
+    // TextLayer layer = Layer.fromMap(meta ?? {}) as TextLayer;
+
+    // editorKey.currentState?.addLayer(
+    //   WidgetLayer(
+    //     widget: Container(
+    //       width: 384,
+    //       height: 384,
+    //       color: Colors.amber,
+    //     ),
+    //   ),
+    // );
+    //return Container();
+    // return Row(
+    //   children: [
+    //     buildTextWidget(textLayers[0]),
+    //     buildTextWidget(textLayers[1]),
+    //   ],
+    // );
+
+    return Stack(
+      key: GlobalKey(),
+      children: [
+        for (var textLayer in textLayers)
+          Builder(builder: (context) {
+            Matrix4 transformMatrix = calcTransformMatrix(textLayer);
+            return AlignPositioned(
+              dx: textLayer.offset.dx,
+              dy: textLayer.offset.dy,
+              child: Transform(
+                transform: transformMatrix,
+                alignment: Alignment.center,
+                child: buildTextWidget(textLayer),
+              ),
+            );
+          }),
+        //buildTextWidget(textLayers[1]),
+        //for (var textLayer in textLayers) buildTextWidget(textLayer),
+        // Positioned(
+        //   top: 34,
+        //   left: 54,
+        //   child: Text('Hello2'),
+        // ),
+        // Positioned(
+        //   top: 68,
+        //   left: 108,
+        //   child: Text('Hello3'),
+        // ),
+      ],
+    );
+  }
+
+  Matrix4 calcTransformMatrix(Layer layer) {
+    return Matrix4.identity()
+      ..setEntry(3, 2, 0.001) // Add a small z-offset to avoid rendering issues
+      ..rotateX(layer.flipY ? pi : 0)
+      ..rotateY(layer.flipX ? pi : 0)
+      ..rotateZ(layer.rotation);
+  }
+
+  Widget buildTextWidget(TextLayer layer) {
+    // return Container(
+    //   alignment: Alignment.center,
+    //   color: Colors.red,
+    //   width: 10,
+    //   height: 10,
+    // );
+    var fontSize = textEditorConfigs.initFontSize * layer.scale;
+    var style = TextStyle(
+      fontSize: fontSize * layer.fontScale,
+      color: layer.color,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final maxTextWidth = layer.maxTextWidth;
+
+    return RoundedBackgroundText(
+      enableHitBoxCorrection: true,
+      maxTextWidth:
+          maxTextWidth == null ? double.infinity : maxTextWidth * layer.scale,
+      layer.text.toString(),
+      backgroundColor: layer.background,
+      textAlign: layer.align,
+      style: layer.textStyle?.copyWith(
+            fontSize: style.fontSize,
+            fontWeight: style.fontWeight,
+            color: style.color,
+            fontFamily: style.fontFamily,
+          ) ??
+          style,
     );
   }
 }

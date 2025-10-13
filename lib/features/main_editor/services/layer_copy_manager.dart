@@ -25,6 +25,8 @@ class LayerCopyManager {
       return createCopyPaintLayer(layer as PaintLayer);
     } else if (layer.isWidgetLayer) {
       return createCopyWidgetLayer(layer as WidgetLayer);
+    } else if (layer.isTemplateLayer) {
+      return createCopyTemplateLayer(layer as TemplateLayer);
     } else {
       return layer;
     }
@@ -177,6 +179,33 @@ class LayerCopyManager {
       key: enableCopyKey ? layer.key : null,
       widget: layer.widget,
       width: layer.width,
+      offset: Offset(
+        layer.offset.dx + offset.dx,
+        layer.offset.dy + offset.dy,
+      ),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      meta: layer.meta,
+      interaction: layer.interaction.copyWith(),
+      boxConstraints: layer.boxConstraints?.copyWith(),
+      exportConfigs: layer.exportConfigs.copyWith(),
+    )..groupId = layer.groupId;
+  }
+
+  TemplateLayer createCopyTemplateLayer(
+    TemplateLayer layer, {
+    bool enableCopyId = true,
+    bool enableCopyKey = true,
+    Offset offset = Offset.zero,
+  }) {
+    return TemplateLayer(
+      id: enableCopyId ? layer.id : null,
+      key: enableCopyKey ? layer.key : null,
+      widget: layer.widget,
+      width: layer.width,
+      height: layer.height,
       offset: Offset(
         layer.offset.dx + offset.dx,
         layer.offset.dy + offset.dy,

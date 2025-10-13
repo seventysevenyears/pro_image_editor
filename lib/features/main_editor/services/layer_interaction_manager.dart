@@ -446,6 +446,8 @@ class LayerInteractionManager {
       return configs.emojiEditor.layerFractionalOffset;
     } else if (layer.isWidgetLayer) {
       return configs.stickerEditor.layerFractionalOffset;
+    } else if (layer.isTemplateLayer) {
+      return configs.templateEditor.layerFractionalOffset;
     } else if (layer.isPaintLayer) {
       return configs.paintEditor.layerFractionalOffset;
     }

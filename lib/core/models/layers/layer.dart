@@ -16,6 +16,7 @@ import '../editor_image.dart';
 import 'emoji_layer.dart';
 import 'layer_interaction.dart';
 import 'paint_layer.dart';
+import 'template_layer.dart';
 import 'text_layer.dart';
 import 'widget_layer.dart';
 
@@ -23,6 +24,7 @@ export 'emoji_layer.dart';
 export 'paint_layer.dart';
 export 'text_layer.dart';
 export 'widget_layer.dart';
+export 'template_layer.dart';
 
 /// Represents a layer with common properties for widgets.
 class Layer {
@@ -124,6 +126,16 @@ class Layer {
           requirePrecache: requirePrecache,
           keyConverter: keyConverter,
         );
+      case 'template':
+        // Returns a TemplateLayer instance when type is 'template'.
+        return TemplateLayer.fromMap(
+          layer: layer,
+          map: map,
+          widgetRecords: widgetRecords ?? [],
+          widgetLoader: widgetLoader,
+          requirePrecache: requirePrecache,
+          keyConverter: keyConverter,
+        );
       default:
         // Returns the base Layer instance when type is unrecognized.
         return layer;
@@ -190,6 +202,12 @@ class Layer {
   /// Subclasses can override this to return `true` if the layer hosts a
   /// Flutter widget or sticker.
   bool get isWidgetLayer => false;
+
+  /// Indicates whether this layer is a [WidgetLayer].
+  ///
+  /// Subclasses can override this to return `true` if the layer hosts a
+  /// Flutter widget or sticker.
+  bool get isTemplateLayer => false;
 
   /// Converts this transform object to a Map.
   ///
@@ -353,6 +371,8 @@ class Layer {
       ..add(FlagProperty('isEmojiLayer', value: isEmojiLayer, ifTrue: 'true'))
       ..add(FlagProperty('isPaintLayer', value: isPaintLayer, ifTrue: 'true'))
       ..add(FlagProperty('isWidgetLayer', value: isWidgetLayer, ifTrue: 'true'))
+      ..add(FlagProperty('isTemplateLayer',
+          value: isTemplateLayer, ifTrue: 'true'))
       ..add(FlagProperty('isTextLayer', value: isTextLayer, ifTrue: 'true'));
   }
 }

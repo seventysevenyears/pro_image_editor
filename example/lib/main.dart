@@ -68,7 +68,7 @@ class MyApp extends StatelessWidget {
         );
       },
       home: const TemplateEditor(),
-      //home: const MyHomePage(),
+      // home: const MyHomePage(),
       //home: const AutoFilePickerPage(),
     );
   }

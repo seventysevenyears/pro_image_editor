@@ -16,6 +16,9 @@ enum LayerWidgetType {
   /// A layer that applies a censoring effect, such as blurring or pixelation.
   censor,
 
+  /// A layer that contains a template.
+  template,
+
   /// An unknown or undefined layer type.
   unknown,
 }

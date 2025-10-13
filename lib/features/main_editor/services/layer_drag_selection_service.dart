@@ -160,7 +160,7 @@ class LayerDragSelectionService {
               ? paintOffset
               : layer.isEmojiLayer
                   ? emojiOffset
-                  : layer.isWidgetLayer
+                  : layer.isWidgetLayer || layer.isTemplateLayer
                       ? widgetOffset
                       : const Offset(-0.5, -0.5);
       fractionalOffset += const Offset(0.5, 0.5);

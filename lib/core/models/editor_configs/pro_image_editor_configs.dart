@@ -18,6 +18,7 @@ import 'paint_editor/paint_editor_configs.dart';
 import 'progress_indicator_configs.dart';
 import 'state_history_configs.dart';
 import 'sticker_editor_configs.dart';
+import 'template_editor_configs.dart';
 import 'text_editor_configs.dart';
 import 'tune_editor_configs.dart';
 import 'video_editor_configs.dart';
@@ -42,6 +43,7 @@ export 'state_history_configs.dart';
 export 'sticker_editor_configs.dart';
 export 'text_editor_configs.dart';
 export 'tune_editor_configs.dart';
+export 'template_editor_configs.dart';
 
 /// A class representing configuration options for the Image Editor.
 class ProImageEditorConfigs {
@@ -95,6 +97,7 @@ class ProImageEditorConfigs {
     this.blurEditor = const BlurEditorConfigs(),
     this.emojiEditor = const EmojiEditorConfigs(),
     this.stickerEditor = const StickerEditorConfigs(),
+    this.templateEditor = const TemplateEditorConfigs(),
     this.stateHistory = const StateHistoryConfigs(),
     this.imageGeneration = const ImageGenerationConfigs(),
     this.helperLines = const HelperLineConfigs(),
@@ -147,6 +150,9 @@ class ProImageEditorConfigs {
   /// Configuration options for the Sticker Editor.
   final StickerEditorConfigs stickerEditor;
 
+  /// Configuration options for the Template Editor.
+  final TemplateEditorConfigs templateEditor;
+
   /// The design mode for the Image Editor.
   final ImageEditorDesignMode designMode;
 
@@ -184,6 +190,7 @@ class ProImageEditorConfigs {
     BlurEditorConfigs? blurEditor,
     EmojiEditorConfigs? emojiEditor,
     StickerEditorConfigs? stickerEditor,
+    TemplateEditorConfigs? templateEditor,
     ImageEditorDesignMode? designMode,
     DialogConfigs? dialogConfigs,
     ProgressIndicatorConfigs? progressIndicatorConfigs,
@@ -206,6 +213,7 @@ class ProImageEditorConfigs {
       blurEditor: blurEditor ?? this.blurEditor,
       emojiEditor: emojiEditor ?? this.emojiEditor,
       stickerEditor: stickerEditor ?? this.stickerEditor,
+      templateEditor: templateEditor ?? this.templateEditor,
       designMode: designMode ?? this.designMode,
       dialogConfigs: dialogConfigs ?? this.dialogConfigs,
       progressIndicatorConfigs:

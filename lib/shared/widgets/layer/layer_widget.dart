@@ -25,6 +25,7 @@ import '/shared/widgets/layer/widgets/layer_widget_paint_item.dart';
 import '/shared/widgets/layer/widgets/layer_widget_text_item.dart';
 import 'interaction_helper/layer_interaction_helper_widget.dart';
 import 'widgets/layer_widget_custom_item.dart';
+import 'widgets/layer_widget_template.dart';
 
 /// A widget representing a layer within a design canvas.
 class LayerWidget extends StatefulWidget with SimpleConfigsAccess {
@@ -138,6 +139,9 @@ class _LayerWidgetState extends State<LayerWidget>
     } else if (_layer.isWidgetLayer) {
       _layerType = LayerWidgetType.widget;
       _fractionalOffset = configs.stickerEditor.layerFractionalOffset;
+    } else if (_layer.isTemplateLayer) {
+      _layerType = LayerWidgetType.template;
+      _fractionalOffset = configs.templateEditor.layerFractionalOffset;
     } else if (_layer.isPaintLayer) {
       var layer = _layer as PaintLayer;
       _layerType = layer.item.mode == PaintMode.blur ||
@@ -261,7 +265,7 @@ class _LayerWidgetState extends State<LayerWidget>
 
   /// Calculates the transformation matrix for the layer's position and
   /// rotation.
-  Matrix4 _calcTransformMatrix() {
+  Matrix4 calcTransformMatrix() {
     return Matrix4.identity()
       ..setEntry(3, 2, 0.001) // Add a small z-offset to avoid rendering issues
       ..rotateX(_layer.flipY ? pi : 0)
@@ -289,7 +293,7 @@ class _LayerWidgetState extends State<LayerWidget>
 
   @override
   Widget build(BuildContext context) {
-    Matrix4 transformMatrix = _calcTransformMatrix();
+    Matrix4 transformMatrix = calcTransformMatrix();
 
     final overlayPadding =
         _isSelected ? layerInteraction.style.overlayPadding : EdgeInsets.zero;
@@ -408,6 +412,11 @@ class _LayerWidgetState extends State<LayerWidget>
         content = LayerWidgetCustomItem(
           layer: _layer as WidgetLayer,
           stickerEditorConfigs: stickerEditorConfigs,
+        );
+      case LayerWidgetType.template:
+        content = LayerWidgetTemplateItem(
+          layer: _layer as TemplateLayer,
+          templateEditorConfigs: templateEditorConfigs,
         );
       case LayerWidgetType.canvas:
         content = LayerWidgetPaintItem(
