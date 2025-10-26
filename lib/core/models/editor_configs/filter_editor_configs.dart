@@ -1,3 +1,6 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+// TODO: Remove the deprecated values when releasing version 12.0.0.
+
 // Project imports:
 import '/features/filter_editor/utils/filter_generator/filter_model.dart';
 
@@ -33,6 +36,10 @@ class FilterEditorConfigs implements BaseSubEditorConfigs {
   /// filters.
   const FilterEditorConfigs({
     this.enableGesturePop = true,
+    @Deprecated(
+      'Use tools inside MainEditorConfigs instead, e.g. tools: '
+      '[SubEditorMode.filter]',
+    )
     this.enabled = true,
     this.showLayers = true,
     this.filterList,
@@ -49,6 +56,10 @@ class FilterEditorConfigs implements BaseSubEditorConfigs {
   final bool enableGesturePop;
 
   /// Indicates whether the filter editor is enabled.
+  @Deprecated(
+    'Use tools inside MainEditorConfigs instead, e.g. tools: '
+    '[SubEditorMode.filter]',
+  )
   final bool enabled;
 
   /// Show also layers in the editor.

@@ -1,6 +1,8 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+// TODO: Remove the deprecated values when releasing version 12.0.0.
+
 // Dart imports:
 import 'dart:math';
-import 'dart:ui' as ui;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -23,6 +25,7 @@ import '/shared/mixins/extended_loop.dart';
 import '/shared/services/content_recorder/widgets/record_invisible_widget.dart';
 import '/shared/services/layer_transform_generator.dart';
 import '/shared/utils/file_constructor_utils.dart';
+import '/shared/utils/transparent_image_generator_utils.dart';
 import '/shared/widgets/extended/extended_custom_paint.dart';
 import '/shared/widgets/extended/extended_transform_scale.dart';
 import '/shared/widgets/extended/extended_transform_translate.dart';
@@ -378,6 +381,9 @@ class CropRotateEditorState extends State<CropRotateEditor>
 
   bool _isVideoPlayerReady = true;
 
+  /// Defines which crop-rotate tools are available in the editor.
+  late List<CropRotateTool> tools = [...cropRotateEditorConfigs.tools];
+
   @override
   void initState() {
     super.initState();
@@ -460,6 +466,21 @@ class CropRotateEditorState extends State<CropRotateEditor>
 
     // Perform post-frame initialization
     cropRotateEditorCallbacks?.onInit?.call();
+
+    // TODO: Remove when releasing version 12.0.0.
+    tools.removeWhere((el) {
+      switch (el) {
+        case CropRotateTool.rotate:
+          return !cropRotateEditorConfigs.showRotateButton;
+        case CropRotateTool.flip:
+          return !cropRotateEditorConfigs.showFlipButton;
+        case CropRotateTool.aspectRatio:
+          return !cropRotateEditorConfigs.showAspectRatioButton;
+        case CropRotateTool.reset:
+          return !cropRotateEditorConfigs.showResetButton;
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       cropRotateEditorCallbacks?.onAfterViewInit?.call();
       initialized = true;
@@ -549,19 +570,6 @@ class CropRotateEditorState extends State<CropRotateEditor>
     if (!isVideoEditor || !initConfigs.convertToUint8List) return;
 
     _isVideoPlayerReady = false;
-    Future<Uint8List> createTransparentImage(
-        double width, double height) async {
-      final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, width, height));
-      final paint = Paint()..color = const ui.Color.fromARGB(0, 0, 0, 0);
-      canvas.drawRect(Rect.fromLTWH(0.0, 0.0, width, height), paint);
-
-      final picture = recorder.endRecording();
-      final img = await picture.toImage(width.toInt(), height.toInt());
-      final pngBytes = await img.toByteData(format: ui.ImageByteFormat.png);
-
-      return pngBytes!.buffer.asUint8List();
-    }
 
     widget.videoController!.initialize(
       configsFunction: () => configs.videoEditor,
@@ -572,10 +580,7 @@ class CropRotateEditorState extends State<CropRotateEditor>
     final resolution = widget.videoController!.initialResolution;
 
     videoBackgroundImage = EditorImage(
-      byteArray: await createTransparentImage(
-        resolution.width,
-        resolution.height,
-      ),
+      byteArray: await createTransparentImage(resolution),
     );
     _isVideoPlayerReady = true;
 
@@ -2183,15 +2188,13 @@ class CropRotateEditorState extends State<CropRotateEditor>
           .call(this, rebuildController.stream);
     }
 
-    return cropRotateEditorConfigs.showRotateButton ||
-            cropRotateEditorConfigs.showFlipButton ||
-            cropRotateEditorConfigs.showAspectRatioButton ||
-            cropRotateEditorConfigs.showResetButton
+    return tools.isNotEmpty
         ? CropEditorBottombar(
             bottomBarScrollCtrl: _bottomBarScrollCtrl,
             i18n: i18n.cropRotateEditor,
             configs: cropRotateEditorConfigs,
             theme: theme,
+            tools: tools,
             onRotate: rotate,
             onFlip: flip,
             onOpenAspectRatioOptions: openAspectRatioOptions,
@@ -2455,6 +2458,7 @@ class CropRotateEditorState extends State<CropRotateEditor>
                 height: _imgHeight,
                 image: editorImage,
                 videoPlayer: videoController?.videoPlayer,
+                blankSize: initConfigs.mainImageSize,
               ),
               if (cropRotateEditorConfigs.showLayers &&
                   cropRotateEditorConfigs.enableTransformLayers &&
@@ -2505,6 +2509,7 @@ class CropRotateEditorState extends State<CropRotateEditor>
                   configs: configs,
                   image: editorImage,
                   videoPlayer: videoController?.videoPlayer,
+                  blankSize: initConfigs.mainImageSize,
                   filters: appliedFilters,
                   tuneAdjustments: appliedTuneAdjustments,
                   blurFactor: appliedBlurFactor,
@@ -2551,6 +2556,7 @@ class CropRotateEditorState extends State<CropRotateEditor>
           videoPlayer: isVideoEditor && initConfigs.convertToUint8List
               ? const SizedBox.shrink()
               : videoController?.videoPlayer,
+          blankSize: initConfigs.mainImageSize,
           filters: appliedFilters,
           tuneAdjustments: appliedTuneAdjustments,
           blurFactor: appliedBlurFactor,

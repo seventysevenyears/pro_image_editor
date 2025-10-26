@@ -198,6 +198,7 @@ class WidgetLayer extends Layer {
   /// Each property of the new instance can be replaced by providing a value
   /// to the corresponding parameter of this method. Unprovided parameters
   /// will default to the current instance's values.
+  @override
   WidgetLayer copyWith({
     Widget? widget,
     double? width,
@@ -208,6 +209,8 @@ class WidgetLayer extends Layer {
     bool? flipX,
     bool? flipY,
     LayerInteraction? interaction,
+    Map<String, dynamic>? meta,
+    BoxConstraints? boxConstraints,
     WidgetLayerExportConfigs? exportConfigs,
     String? groupId,
   }) {
@@ -222,7 +225,10 @@ class WidgetLayer extends Layer {
       flipY: flipY ?? this.flipY,
       interaction: interaction ?? this.interaction,
       exportConfigs: exportConfigs ?? this.exportConfigs,
-    )..groupId = groupId ?? this.groupId;
+      groupId: groupId ?? this.groupId,
+      meta: meta ?? this.meta,
+      boxConstraints: boxConstraints ?? this.boxConstraints,
+    );
   }
 
   @override

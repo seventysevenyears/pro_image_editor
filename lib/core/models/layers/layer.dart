@@ -353,6 +353,34 @@ class Layer {
         groupId.hashCode;
   }
 
+  /// Creates a copy of this [Layer] with the given fields replaced with
+  /// new values.
+  Layer copyWith({
+    String? id,
+    String? groupId,
+    Offset? offset,
+    double? rotation,
+    double? scale,
+    bool? flipX,
+    bool? flipY,
+    LayerInteraction? interaction,
+    Map<String, dynamic>? meta,
+    BoxConstraints? boxConstraints,
+  }) {
+    return Layer(
+      id: id ?? this.id,
+      groupId: groupId ?? this.groupId,
+      offset: offset ?? this.offset,
+      rotation: rotation ?? this.rotation,
+      scale: scale ?? this.scale,
+      flipX: flipX ?? this.flipX,
+      flipY: flipY ?? this.flipY,
+      interaction: interaction ?? this.interaction,
+      meta: meta ?? this.meta,
+      boxConstraints: boxConstraints ?? this.boxConstraints,
+    );
+  }
+
   /// Fills the given [DiagnosticPropertiesBuilder] with properties of this
   /// layer for debugging and development tools.
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {

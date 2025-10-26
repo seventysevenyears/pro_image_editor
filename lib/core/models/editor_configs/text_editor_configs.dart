@@ -1,3 +1,6 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+// TODO: Remove the deprecated values when releasing version 12.0.0.
+
 // Flutter imports:
 import 'package:flutter/widgets.dart';
 
@@ -39,6 +42,10 @@ class TextEditorConfigs
     this.layerFractionalOffset = const Offset(-0.5, -0.5),
     this.enableGesturePop = true,
     this.enableSuggestions = true,
+    @Deprecated(
+      'Use tools inside MainEditorConfigs instead, e.g. tools: '
+      '[SubEditorMode.text]',
+    )
     this.enabled = true,
     this.enableEdit = true,
     this.enableAutocorrect = true,
@@ -78,6 +85,10 @@ class TextEditorConfigs
   final bool enableGesturePop;
 
   /// Indicates whether the text editor is enabled.
+  @Deprecated(
+    'Use tools inside MainEditorConfigs instead, e.g. tools: '
+    '[SubEditorMode.text]',
+  )
   final bool enabled;
 
   /// Indicating whether created layers can be edited.
