@@ -91,37 +91,72 @@ class _TemplateEditorState extends State<TemplateEditor>
       // 기존 references의 모든 내용을 copyList에 저장
       final copyList = Map<String, dynamic>.from(references);
 
-      // copyList의 모든 x, y 값에서 절대값 기준 최대값 찾기
-      double maxAbsX = 0;
-      double maxAbsY = 0;
+      // copyList의 모든 오브젝트를 포함하는 바운딩 박스 계산
+      double? minX;
+      double? maxX;
+      double? minY;
+      double? maxY;
 
       copyList.forEach((key, value) {
         if (value is Map<String, dynamic>) {
           final x = (value['x'] as num?)?.toDouble() ?? 0;
           final y = (value['y'] as num?)?.toDouble() ?? 0;
+          final width = (value['widgetWidth'] as num?)?.toDouble() ?? 0;
+          final height = (value['widgetHeight'] as num?)?.toDouble() ?? 0;
 
-          final absX = x.abs();
-          final absY = y.abs();
+          // 레이어의 실제 범위 계산 (offset이 중심점이라고 가정)
+          final leftEdge = x - (width / 2);
+          final rightEdge = x + (width / 2);
+          final topEdge = y - (height / 2);
+          final bottomEdge = y + (height / 2);
 
-          if (absX > maxAbsX) maxAbsX = absX;
-          if (absY > maxAbsY) maxAbsY = absY;
+          // 최소/최대 좌표 업데이트
+          minX = minX == null ? leftEdge : (leftEdge < minX! ? leftEdge : minX);
+          maxX =
+              maxX == null ? rightEdge : (rightEdge > maxX! ? rightEdge : maxX);
+          minY = minY == null ? topEdge : (topEdge < minY! ? topEdge : minY);
+          maxY = maxY == null
+              ? bottomEdge
+              : (bottomEdge > maxY! ? bottomEdge : maxY);
         }
       });
 
-      print('\n=== copyList 절대값 최대 좌표 ===');
-      print('최대 절대값 X: $maxAbsX');
-      print('최대 절대값 Y: $maxAbsY');
-      var width = maxAbsX * 2;
-      var height = maxAbsY * 2;
+      // 중점과 전체 크기 계산
+      final centerX = ((minX ?? 0) + (maxX ?? 0)) / 2;
+      final centerY = ((minY ?? 0) + (maxY ?? 0)) / 2;
+      var width = (maxX ?? 0) - (minX ?? 0);
+      var height = (maxY ?? 0) - (minY ?? 0);
+
+      print('\n=== copyList 바운딩 박스 정보 ===');
+      print('최소 X: $minX, 최대 X: $maxX');
+      print('최소 Y: $minY, 최대 Y: $maxY');
+      print('중점 (centerX, centerY): ($centerX, $centerY)');
+      print('전체 Width: $width');
+      print('전체 Height: $height');
       if (width < 100) width = 100;
       if (height < 100) height = 100;
+
+      // copyList의 모든 좌표를 centerX, centerY 기준 상대 좌표로 변환
+      copyList.forEach((key, value) {
+        if (value is Map<String, dynamic>) {
+          final x = (value['x'] as num?)?.toDouble() ?? 0;
+          final y = (value['y'] as num?)?.toDouble() ?? 0;
+
+          // 중점 기준 상대 좌표로 변환
+          value['x'] = x - centerX;
+          value['y'] = y - centerY;
+
+          print('$key: 절대좌표 ($x, $y) -> 상대좌표 (${value['x']}, ${value['y']})');
+        }
+      });
+
       // 기존 references 내용을 모두 삭제
       references.clear();
 
       // 새로운 "A" 객체 생성 및 copyList를 meta에 저장
       references['A'] = {
-        'x': 0,
-        'y': 0,
+        'x': centerX,
+        'y': centerY,
         'rotation': 0,
         'scale': 1,
         'flipX': false,
@@ -696,37 +731,56 @@ class _TemplateEditorState extends State<TemplateEditor>
       });
 
       // 모든 레이어를 포함하는 바운딩 박스 계산
-      if (textLayers.isNotEmpty) {
-        double maxAbsX = 0;
-        double maxAbsY = 0;
+      // if (textLayers.isNotEmpty) {
+      //   // 최소/최대 값 초기화
+      //   bool isFirst = true;
 
-        for (var layer in textLayers) {
-          // 각 레이어의 위치 (x, y)
-          final x = layer.offset.dx;
-          final y = layer.offset.dy;
+      //   for (var layer in textLayers) {
+      //     // 각 레이어의 위치 (x, y)
+      //     final x = layer.offset.dx;
+      //     final y = layer.offset.dy;
 
-          // 절대값으로 가장 큰 값 찾기
-          final absX = x.abs();
-          final absY = y.abs();
+      //     // 레이어의 크기 고려 (width, height가 null이면 0으로 처리)
+      //     final width = layer.width ?? 0;
+      //     final height = layer.height ?? 0;
 
-          if (absX > maxAbsX) maxAbsX = absX;
-          if (absY > maxAbsY) maxAbsY = absY;
-        }
+      //     // 레이어의 실제 범위 계산 (offset이 중심점이라고 가정)
+      //     final leftEdge = x - (width / 2);
+      //     final rightEdge = x + (width / 2);
+      //     final topEdge = y - (height / 2);
+      //     final bottomEdge = y + (height / 2);
 
-        totalWidth = maxAbsX * 2;
-        totalHeight = maxAbsY * 2;
-        centerX = 0;
-        centerY = 0;
-        if (totalWidth < 100) totalWidth = 100;
-        if (totalHeight < 100) totalHeight = 100;
+      //     // 최소/최대 좌표 업데이트
+      //     if (isFirst) {
+      //       minX = leftEdge;
+      //       maxX = rightEdge;
+      //       minY = topEdge;
+      //       maxY = bottomEdge;
+      //       isFirst = false;
+      //     } else {
+      //       if (leftEdge < minX) minX = leftEdge;
+      //       if (rightEdge > maxX) maxX = rightEdge;
+      //       if (topEdge < minY) minY = topEdge;
+      //       if (bottomEdge > maxY) maxY = bottomEdge;
+      //     }
+      //   }
 
-        print('\n=== 바운딩 박스 정보 ===');
-        print('중간점 (centerX, centerY): ($centerX, $centerY)');
-        print('전체 가로 길이: $totalWidth');
-        print('전체 세로 길이: $totalHeight');
-        print('최소 X: $minX, 최대 X: $maxX');
-        print('최소 Y: $minY, 최대 Y: $maxY');
-      }
+      //   // 중점과 전체 크기 계산
+      //   centerX = (minX + maxX) / 2;
+      //   centerY = (minY + maxY) / 2;
+      //   totalWidth = maxX - minX;
+      //   totalHeight = maxY - minY;
+
+      //   if (totalWidth < 100) totalWidth = 100;
+      //   if (totalHeight < 100) totalHeight = 100;
+
+      //   print('\n=== 바운딩 박스 정보 ===');
+      //   print('최소 X: $minX, 최대 X: $maxX');
+      //   print('최소 Y: $minY, 최대 Y: $maxY');
+      //   print('중간점 (centerX, centerY): ($centerX, $centerY)');
+      //   print('전체 가로 길이: $totalWidth');
+      //   print('전체 세로 길이: $totalHeight');
+      // }
     } else {
       print('meta가 null이거나 비어있습니다');
     }

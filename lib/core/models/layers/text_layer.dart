@@ -35,6 +35,8 @@ class TextLayer extends Layer {
     this.align = TextAlign.left,
     this.fontScale = 1.0,
     this.maxTextWidth,
+    this.width,
+    this.height,
     super.offset,
     super.rotation,
     super.scale,
@@ -127,6 +129,8 @@ class TextLayer extends Layer {
       text: map[keyConverter('text')] ?? '-',
       fontScale: fontScale,
       maxTextWidth: tryParseDouble(map[keyConverter('maxTextWidth')]),
+      width: tryParseDouble(map[keyConverter('widgetWidth')]),
+      height: tryParseDouble(map[keyConverter('widgetHeight')]),
       textStyle: fontFamily != null ||
               wordSpacing != null ||
               height != null ||
@@ -194,6 +198,12 @@ class TextLayer extends Layer {
   /// import and export this style.
   TextStyle? textStyle;
 
+  /// The width of the rendered text widget.
+  double? width;
+
+  /// The height of the rendered text widget.
+  double? height;
+
   @override
   bool get isTextLayer => true;
 
@@ -229,6 +239,8 @@ class TextLayer extends Layer {
         'wordSpacing': textStyle?.wordSpacing?.roundSmart(maxDecimalPlaces),
       if (textStyle?.decoration != null)
         'decoration': textStyle?.decoration.toString(),
+      if (width != null) 'widgetWidth': width,
+      if (height != null) 'widgetHeight': height,
     };
   }
 
@@ -270,6 +282,8 @@ class TextLayer extends Layer {
         'decoration': textStyle?.decoration.toString(),
       if (paintLayer.maxTextWidth != maxTextWidth)
         'maxTextWidth': maxTextWidth?.roundSmart(maxDecimalPlaces),
+      if (paintLayer.width != width) 'widgetWidth': width,
+      if (paintLayer.height != height) 'widgetHeight': height,
     };
   }
 
@@ -287,6 +301,8 @@ class TextLayer extends Layer {
       ..add(DoubleProperty('fontScale', fontScale))
       ..add(DoubleProperty('maxTextWidth', maxTextWidth))
       ..add(DiagnosticsProperty<TextStyle>('textStyle', textStyle))
-      ..add(DiagnosticsProperty<bool>('hasHit', hit));
+      ..add(DiagnosticsProperty<bool>('hasHit', hit))
+      ..add(DoubleProperty('width', width))
+      ..add(DoubleProperty('height', height));
   }
 }

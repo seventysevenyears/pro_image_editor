@@ -26,7 +26,6 @@ class LayerWidgetTemplateItem extends StatelessWidget {
       scale: layer.scale,
       alignment: Alignment.center,
       child: Container(
-        color: Colors.amber,
         width: (layer.width ?? templateEditorConfigs.initWidth),
         height: (layer.height ?? templateEditorConfigs.initHeight),
         child: layer.widget,

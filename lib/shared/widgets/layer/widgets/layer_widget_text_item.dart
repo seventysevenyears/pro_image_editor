@@ -52,8 +52,22 @@ class LayerWidgetTextItem extends StatelessWidget {
     );
 
     final maxTextWidth = layer.maxTextWidth;
+    final key = GlobalKey();
+
+    // Schedule size measurement after the widget is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final renderBox = key.currentContext?.findRenderObject() as RenderBox?;
+      if (renderBox != null && renderBox.hasSize) {
+        final size = renderBox.size;
+        if (layer.width != size.width || layer.height != size.height) {
+          layer.width = size.width;
+          layer.height = size.height;
+        }
+      }
+    });
 
     return RoundedBackgroundText(
+      key: key,
       enableHitBoxCorrection: true,
       maxTextWidth:
           maxTextWidth == null ? double.infinity : maxTextWidth * layer.scale,
