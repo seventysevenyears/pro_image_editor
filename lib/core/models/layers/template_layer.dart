@@ -219,6 +219,7 @@ class TemplateLayer extends Layer {
   /// Each property of the new instance can be replaced by providing a value
   /// to the corresponding parameter of this method. Unprovided parameters
   /// will default to the current instance's values.
+  @override
   TemplateLayer copyWith({
     Widget? widget,
     double? width,
@@ -232,6 +233,8 @@ class TemplateLayer extends Layer {
     LayerInteraction? interaction,
     TemplateLayerExportConfigs? exportConfigs,
     String? groupId,
+    Map<String, dynamic>? meta,
+    BoxConstraints? boxConstraints,
   }) {
     return TemplateLayer(
       widget: widget ?? this.widget,
