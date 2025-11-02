@@ -7,6 +7,7 @@ import 'filter_editor_callbacks.dart';
 import 'main_editor/main_editor_callbacks.dart';
 import 'paint_editor_callbacks.dart';
 import 'sticker_editor_callbacks.dart';
+import 'template_editor_callbacks.dart';
 import 'text_editor_callbacks.dart';
 import 'tune_editor_callbacks.dart';
 import 'video_editor_callbacks.dart';
@@ -41,6 +42,7 @@ class ProImageEditorCallbacks {
     this.blurEditorCallbacks,
     this.emojiEditorCallbacks,
     this.stickerEditorCallbacks,
+    this.templateEditorCallbacks,
     this.tuneEditorCallbacks,
     this.videoEditorCallbacks,
   });
@@ -123,6 +125,9 @@ class ProImageEditorCallbacks {
   /// Callbacks from the sticker editor.
   final StickerEditorCallbacks? stickerEditorCallbacks;
 
+  /// Callbacks from the template editor.
+  final TemplateEditorCallbacks? templateEditorCallbacks;
+
   /// Callbacks from the tune editor.
   final TuneEditorCallbacks? tuneEditorCallbacks;
 
@@ -144,6 +149,7 @@ class ProImageEditorCallbacks {
     BlurEditorCallbacks? blurEditorCallbacks,
     EmojiEditorCallbacks? emojiEditorCallbacks,
     StickerEditorCallbacks? stickerEditorCallbacks,
+    TemplateEditorCallbacks? templateEditorCallbacks,
     TuneEditorCallbacks? tuneEditorCallbacks,
     VideoEditorCallbacks? videoEditorCallbacks,
   }) {
@@ -167,6 +173,8 @@ class ProImageEditorCallbacks {
       emojiEditorCallbacks: emojiEditorCallbacks ?? this.emojiEditorCallbacks,
       stickerEditorCallbacks:
           stickerEditorCallbacks ?? this.stickerEditorCallbacks,
+      templateEditorCallbacks:
+          templateEditorCallbacks ?? this.templateEditorCallbacks,
       tuneEditorCallbacks: tuneEditorCallbacks ?? this.tuneEditorCallbacks,
       videoEditorCallbacks: videoEditorCallbacks ?? this.videoEditorCallbacks,
     );

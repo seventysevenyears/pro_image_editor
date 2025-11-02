@@ -9,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 // Package imports:
-import 'package:google_fonts/google_fonts.dart';
 import 'package:pro_image_editor/features/text_editor/widgets/rounded_background_text/rounded_background_text.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,20 +20,21 @@ import '/features/stickers_example.dart';
 import '/core/mixin/example_helper.dart';
 
 /// Template editor for creating custom templates
-class TemplateEditor extends StatefulWidget {
-  /// Creates a new [TemplateEditor] widget.
-  const TemplateEditor({super.key});
+class TemplateExample extends StatefulWidget {
+  /// Creates a new [TemplateExample] widget.
+  const TemplateExample({super.key});
 
   @override
-  State<TemplateEditor> createState() => _TemplateEditorState();
+  State<TemplateExample> createState() => _TemplateExampleState();
 }
 
-class _TemplateEditorState extends State<TemplateEditor>
-    with ExampleHelperState<TemplateEditor> {
-  final GlobalKey<ProImageEditorState> _key = GlobalKey<ProImageEditorState>();
+class _TemplateExampleState extends State<TemplateExample>
+    with ExampleHelperState<TemplateExample> {
   bool _ignorePlatformIssue = false;
   bool _templateCreated = false;
   TextEditorConfigs textEditorConfigs = TextEditorConfigs();
+  TemplateEditorConfigs templateEditorConfigs = TemplateEditorConfigs();
+  ImportStateHistory? _loadedHistory;
 
   @override
   void initState() {
@@ -47,17 +47,20 @@ class _TemplateEditorState extends State<TemplateEditor>
       _templateCreated = true;
     });
     preCacheImage(assetPath: 'assets/black.png');
+    templateEditorConfigs = TemplateEditorConfigs(
+      enabled: true,
+    );
     textEditorConfigs = TextEditorConfigs(
       showSelectFontStyleBottomBar: true,
-      customTextStyles: [
-        GoogleFonts.roboto(),
-        GoogleFonts.averiaLibre(),
-        GoogleFonts.lato(),
-        GoogleFonts.comicNeue(),
-        GoogleFonts.actor(),
-        GoogleFonts.odorMeanChey(),
-        GoogleFonts.nabla(),
-      ],
+      // customTextStyles: [
+      //   GoogleFonts.roboto(),
+      //   GoogleFonts.averiaLibre(),
+      //   GoogleFonts.lato(),
+      //   GoogleFonts.comicNeue(),
+      //   GoogleFonts.actor(),
+      //   GoogleFonts.odorMeanChey(),
+      //   GoogleFonts.nabla(),
+      // ],
     );
   }
 
@@ -74,16 +77,9 @@ class _TemplateEditorState extends State<TemplateEditor>
   /// references의 모든 내용을 새로운 "A" 위젯의 meta에 복사
   Map<String, dynamic>? _modifyTemplateJson(Map<String, dynamic> jsonMap) {
     try {
-      // references 키 확인
       if (!jsonMap.containsKey('references')) {
         print('\n=== 에러 ===');
         print('references 키가 존재하지 않습니다!');
-
-        final jsonDetail = const JsonEncoder.withIndent('  ').convert(jsonMap);
-        final lines = jsonDetail.split('\n');
-        for (final line in lines) {
-          print(line);
-        }
         return null;
       }
       final references = jsonMap['references'] as Map<String, dynamic>;
@@ -104,13 +100,11 @@ class _TemplateEditorState extends State<TemplateEditor>
           final width = (value['widgetWidth'] as num?)?.toDouble() ?? 0;
           final height = (value['widgetHeight'] as num?)?.toDouble() ?? 0;
 
-          // 레이어의 실제 범위 계산 (offset이 중심점이라고 가정)
           final leftEdge = x - (width / 2);
           final rightEdge = x + (width / 2);
           final topEdge = y - (height / 2);
           final bottomEdge = y + (height / 2);
 
-          // 최소/최대 좌표 업데이트
           minX = minX == null ? leftEdge : (leftEdge < minX! ? leftEdge : minX);
           maxX =
               maxX == null ? rightEdge : (rightEdge > maxX! ? rightEdge : maxX);
@@ -142,7 +136,6 @@ class _TemplateEditorState extends State<TemplateEditor>
           final x = (value['x'] as num?)?.toDouble() ?? 0;
           final y = (value['y'] as num?)?.toDouble() ?? 0;
 
-          // 중점 기준 상대 좌표로 변환
           value['x'] = x - centerX;
           value['y'] = y - centerY;
 
@@ -173,7 +166,7 @@ class _TemplateEditorState extends State<TemplateEditor>
           'id': 'template-0',
           'width': width,
           'height': height,
-          'meta': copyList, // 원본 references를 copyList로 저장
+          'meta': copyList,
         },
       };
 
@@ -184,7 +177,6 @@ class _TemplateEditorState extends State<TemplateEditor>
         for (var history in historys) {
           if (history is Map<String, dynamic> &&
               history.containsKey('layers')) {
-            // layers를 {"id": "A"}로 교체
             history['layers'] = [
               {'id': 'A'}
             ];
@@ -236,6 +228,33 @@ class _TemplateEditorState extends State<TemplateEditor>
     }
   }
 
+  /// JSON 파일을 읽고 파싱하는 공통 함수
+  Future<Map<String, dynamic>?> _readAndParseTemplateFile(
+      String filePath) async {
+    try {
+      final file = File(filePath);
+      final jsonString = await file.readAsString();
+      var jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+
+      final modifiedJson = _modifyTemplateJson(jsonMap);
+      if (modifiedJson == null) {
+        if (!mounted) return null;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('에러: references 키가 존재하지 않습니다'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return null;
+      }
+
+      return modifiedJson;
+    } catch (e) {
+      print('템플릿 파일 파싱 실패: $e');
+      return null;
+    }
+  }
+
   Future<void> _loadTemplate() async {
     try {
       final templatesDir = await _getTemplatesDirectory();
@@ -261,24 +280,8 @@ class _TemplateEditorState extends State<TemplateEditor>
 
       if (selectedFile == null || !mounted) return;
 
-      // Read JSON file
-      final file = File(selectedFile);
-      final jsonString = await file.readAsString();
-      var jsonMap = json.decode(jsonString) as Map<String, dynamic>;
-
-      // JSON 수정 적용
-      final modifiedJson = _modifyTemplateJson(jsonMap);
-      if (modifiedJson == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('에러: references 키가 존재하지 않습니다'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-        return;
-      }
-      jsonMap = modifiedJson;
+      final jsonMap = await _readAndParseTemplateFile(selectedFile);
+      if (jsonMap == null) return;
 
       final jsonDetail = const JsonEncoder.withIndent('  ').convert(jsonMap);
       final lines = jsonDetail.split('\n');
@@ -295,36 +298,20 @@ class _TemplateEditorState extends State<TemplateEditor>
             Map<String, dynamic>? meta,
           }) {
             return widgetCustomLoader(id, meta: meta);
-
-            // switch (id) {
-            //   case 'my-special-container':
-            //     return Container(
-            //       width: 100,
-            //       height: 100,
-            //       color: Colors.amber,
-            //     );
-
-            //   /// ... other widgets
-            // }
-            // throw ArgumentError(
-            //   'No widget found for the given id: $id',
-            // );
           },
         ),
       );
 
-      // Reload editor with new history
       setState(() {
         _loadedHistory = history;
-        _templateCreated = false; // Force rebuild
+        _templateCreated = false;
       });
 
-      // Wait for rebuild
       await Future.delayed(const Duration(milliseconds: 100));
 
       if (!mounted) return;
       setState(() {
-        _templateCreated = true; // Rebuild with new history
+        _templateCreated = true;
       });
 
       if (!mounted) return;
@@ -339,75 +326,73 @@ class _TemplateEditorState extends State<TemplateEditor>
     }
   }
 
-  Future<void> _loadTemplate2() async {
+  Future<void> _loadTemplateFromFile(
+    String filePath,
+    void Function(WidgetLayer widget) setLayer,
+  ) async {
     try {
-      final templatesDir = await _getTemplatesDirectory();
-      final dir = Directory(templatesDir);
-      final files = await dir
-          .list()
-          .where((file) => file.path.endsWith('.json'))
-          .toList();
-
-      if (files.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('저장된 템플릿이 없습니다')),
-        );
-        return;
-      }
-
-      if (!mounted) return;
-      final selectedFile = await showDialog<String>(
-        context: context,
-        builder: (context) => _buildTemplateListDialog(files),
+      LoadingDialog.instance.show(
+        context,
+        configs: const ProImageEditorConfigs(),
+        theme: Theme.of(context),
       );
 
-      if (selectedFile == null || !mounted) return;
-
-      // Read and modify JSON file
-      final file = File(selectedFile);
-      final jsonString = await file.readAsString();
-      var jsonMap = json.decode(jsonString) as Map<String, dynamic>;
-
-      print('=== 원본 템플릿 파일 ===');
-      print('파일 경로: $selectedFile');
-      print('파일명: ${selectedFile.split('/').last.split('\\').last}');
-
-      // JSON 수정 적용
-      final modifiedJson = _modifyTemplateJson(jsonMap);
-      if (modifiedJson == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('에러: references 키가 존재하지 않습니다'),
-            duration: Duration(seconds: 3),
-          ),
-        );
+      final jsonMap = await _readAndParseTemplateFile(filePath);
+      if (jsonMap == null) {
+        LoadingDialog.instance.hide();
         return;
       }
-      jsonMap = modifiedJson;
 
-      print('\n=== 수정된 JSON 내용 ===');
       final jsonDetail = const JsonEncoder.withIndent('  ').convert(jsonMap);
       final lines = jsonDetail.split('\n');
       for (final line in lines) {
         print(line);
       }
 
+      final history = ImportStateHistory.fromMap(
+        jsonMap,
+        configs: ImportEditorConfigs(
+          recalculateSizeAndPosition: true,
+          widgetLoader: (
+            String id, {
+            Map<String, dynamic>? meta,
+          }) {
+            return widgetCustomLoader(id, meta: meta);
+          },
+        ),
+      );
+
+      LoadingDialog.instance.hide();
+
+      setState(() {
+        _loadedHistory = history;
+        _templateCreated = false;
+      });
+
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!mounted) return;
+      setState(() {
+        _templateCreated = true;
+      });
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-              '템플릿 변환 완료: ${selectedFile.split('/').last.split('\\').last}'),
-          duration: const Duration(seconds: 2),
+          content:
+              Text('템플릿 로드됨: ${filePath.split('/').last.split('\\').last}'),
+          duration: const Duration(seconds: 1),
         ),
       );
     } catch (e) {
-      print('=== 로드 실패 ===');
-      print('에러: $e');
+      LoadingDialog.instance.hide();
+      print('템플릿 로드 실패: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('로드 실패: $e')),
+        SnackBar(
+          content: Text('템플릿 로드 실패: $e'),
+          duration: const Duration(seconds: 2),
+        ),
       );
     }
   }
@@ -453,15 +438,13 @@ class _TemplateEditorState extends State<TemplateEditor>
     }
   }
 
-  ImportStateHistory? _loadedHistory;
-
   ReactiveWidget _buildSaveButton(Stream<void> rebuildStream) {
     return ReactiveWidget(
       stream: rebuildStream,
       builder: (_) {
         return Positioned(
           top: 60,
-          right: 20,
+          left: 20,
           child: FloatingActionButton(
             heroTag: 'save_template_button',
             onPressed: _saveTemplate,
@@ -483,7 +466,7 @@ class _TemplateEditorState extends State<TemplateEditor>
       builder: (_) {
         return Positioned(
           top: 130,
-          right: 20,
+          left: 20,
           child: FloatingActionButton(
             heroTag: 'load_template_button',
             onPressed: _loadTemplate,
@@ -499,25 +482,278 @@ class _TemplateEditorState extends State<TemplateEditor>
     );
   }
 
-  ReactiveWidget _buildLoadButton2(Stream<void> rebuildStream) {
-    return ReactiveWidget(
-      stream: rebuildStream,
-      builder: (_) {
-        return Positioned(
-          top: 200,
-          right: 20,
-          child: FloatingActionButton(
-            heroTag: 'load_template_button_2',
-            onPressed: _loadTemplate2,
-            backgroundColor: Colors.orange,
-            child: const Icon(
-              Icons.folder_special,
-              color: Colors.white,
+  Widget buildTemplate(
+    void Function(WidgetLayer widget) setLayer,
+    ScrollController scrollController,
+  ) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: FutureBuilder<List<FileSystemEntity>>(
+        future: _loadTemplateFiles(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  '템플릿 로드 중 오류 발생: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          final files = snapshot.data ?? [];
+
+          if (files.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  '저장된 템플릿이 없습니다.\n위의 저장 버튼을 눌러 템플릿을 만들어보세요.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+            );
+          }
+
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 150,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 0.75,
             ),
-            tooltip: '템플릿 로드 2',
-          ),
-        );
-      },
+            controller: scrollController,
+            itemCount: files.length,
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              final file = files[index];
+              final filename = file.path.split('/').last.split('\\').last;
+              final timestamp =
+                  filename.replaceAll('template_', '').replaceAll('.json', '');
+
+              return GestureDetector(
+                onTap: () async {
+                  await _loadTemplateFromFile(file.path, setLayer);
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Card(
+                    elevation: 2,
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            color: Colors.black,
+                            child: Center(
+                              child: FutureBuilder<Widget?>(
+                                future: _loadTemplatePreview(file.path),
+                                builder: (context, previewSnapshot) {
+                                  if (previewSnapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const SizedBox(
+                                      width: 30,
+                                      height: 30,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    );
+                                  }
+
+                                  if (previewSnapshot.hasError ||
+                                      previewSnapshot.data == null) {
+                                    return const Icon(
+                                      Icons.layers,
+                                      size: 40,
+                                      color: Colors.white54,
+                                    );
+                                  }
+
+                                  return FittedBox(
+                                    fit: BoxFit.contain,
+                                    child: previewSnapshot.data!,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(6),
+                          color: Colors.white,
+                          child: Text(
+                            _formatTimestamp(timestamp),
+                            style: const TextStyle(fontSize: 9),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<List<FileSystemEntity>> _loadTemplateFiles() async {
+    try {
+      final templatesDir = await _getTemplatesDirectory();
+      final dir = Directory(templatesDir);
+
+      if (!await dir.exists()) {
+        return [];
+      }
+
+      final files = await dir
+          .list()
+          .where((file) => file.path.endsWith('.json'))
+          .toList();
+
+      files.sort((a, b) => b.path.compareTo(a.path));
+
+      return files;
+    } catch (e) {
+      print('템플릿 파일 로드 중 오류: $e');
+      return [];
+    }
+  }
+
+  Future<Widget?> _loadTemplatePreview(String filePath) async {
+    try {
+      final file = File(filePath);
+      final jsonString = await file.readAsString();
+      final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+
+      if (!jsonMap.containsKey('references')) {
+        return null;
+      }
+
+      final references = jsonMap['references'] as Map<String, dynamic>;
+      if (references.isEmpty) {
+        return null;
+      }
+
+      final List<TextLayer> textLayers = [];
+
+      double? minX;
+      double? maxX;
+      double? minY;
+      double? maxY;
+
+      references.forEach((key, value) {
+        if (value is Map<String, dynamic>) {
+          try {
+            final layer = Layer.fromMap(value, id: key);
+            if (layer is TextLayer) {
+              textLayers.add(layer);
+
+              final x = layer.offset.dx;
+              final y = layer.offset.dy;
+              final width = layer.width ?? 0;
+              final height = layer.height ?? 0;
+
+              final leftEdge = x - (width / 2);
+              final rightEdge = x + (width / 2);
+              final topEdge = y - (height / 2);
+              final bottomEdge = y + (height / 2);
+
+              minX = minX == null
+                  ? leftEdge
+                  : (leftEdge < minX! ? leftEdge : minX);
+              maxX = maxX == null
+                  ? rightEdge
+                  : (rightEdge > maxX! ? rightEdge : maxX);
+              minY =
+                  minY == null ? topEdge : (topEdge < minY! ? topEdge : minY);
+              maxY = maxY == null
+                  ? bottomEdge
+                  : (bottomEdge > maxY! ? bottomEdge : maxY);
+            }
+          } catch (e) {
+            print('레이어 파싱 오류: $e');
+          }
+        }
+      });
+
+      if (textLayers.isEmpty) {
+        return null;
+      }
+
+      final totalWidth = (maxX ?? 0) - (minX ?? 0);
+      final totalHeight = (maxY ?? 0) - (minY ?? 0);
+      final centerX = ((minX ?? 0) + (maxX ?? 0)) / 2;
+      final centerY = ((minY ?? 0) + (maxY ?? 0)) / 2;
+
+      return SizedBox(
+        width: totalWidth > 0 ? totalWidth : 100,
+        height: totalHeight > 0 ? totalHeight : 100,
+        child: Stack(
+          children: [
+            for (var textLayer in textLayers)
+              Builder(
+                builder: (context) {
+                  final transformMatrix = calcTransformMatrix(textLayer);
+                  return AlignPositioned(
+                    dx: textLayer.offset.dx - centerX,
+                    dy: textLayer.offset.dy - centerY,
+                    child: Transform(
+                      transform: transformMatrix,
+                      alignment: Alignment.center,
+                      child: _buildPreviewTextWidget(textLayer),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      );
+    } catch (e) {
+      print('템플릿 미리보기 로드 실패: $e');
+      return null;
+    }
+  }
+
+  Widget _buildPreviewTextWidget(TextLayer layer) {
+    final fontSize = textEditorConfigs.initFontSize * layer.scale;
+    final style = TextStyle(
+      fontSize: fontSize * layer.fontScale,
+      color: layer.color,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final maxTextWidth = layer.maxTextWidth;
+
+    return RoundedBackgroundText(
+      enableHitBoxCorrection: true,
+      maxTextWidth:
+          maxTextWidth == null ? double.infinity : maxTextWidth * layer.scale,
+      layer.text.toString(),
+      backgroundColor: layer.background,
+      textAlign: layer.align,
+      style: layer.textStyle?.copyWith(
+            fontSize: style.fontSize,
+            fontWeight: style.fontWeight,
+            color: style.color,
+            fontFamily: style.fontFamily,
+          ) ??
+          style,
     );
   }
 
@@ -540,9 +776,6 @@ class _TemplateEditorState extends State<TemplateEditor>
         itemBuilder: (context, index) {
           return GestureDetector(
             onTap: () async {
-              // Important make sure the image is completely loaded
-              // cuz the editor will directly take a screenshot
-              // inside of a background isolated thread.
               LoadingDialog.instance.show(
                 context,
                 configs: const ProImageEditorConfigs(),
@@ -558,33 +791,8 @@ class _TemplateEditorState extends State<TemplateEditor>
               setLayer(
                 WidgetLayer(
                   widget: Sticker(index: index),
-
-                  /// The `exportConfigs` parameter is optional but
-                  /// useful if you want to import or export history and
-                  /// directly load the same sticker.
-                  ///
-                  /// If `exportConfigs` is not added, the editor will
-                  /// convert the exported state history to a `Uint8List`
-                  /// to restore the layer. However, this may reduce
-                  /// quality and cause a delay during export.
-                  ///
-                  /// If you use the ID parameter, it is important to set
-                  /// up a `widgetLoader` inside the `ImportEditorConfigs`
-                  ///  when importing the state history.
-                  /// Refer to the [import-example](https://github.com/hm21/pro_image_editor/blob/stable/example/lib/features/import_export_example.dart)
-                  /// for details on how this works.
                   exportConfigs: WidgetLayerExportConfigs(
                     id: 'sticker-$index',
-
-                    /// Alternatively, you can use one of the parameters
-                    /// listed below instead of the id, which does not
-                    /// require setting up the widgetLoader. However,
-                    /// please note that for complex widgets, this
-                    /// approach may slightly alter their size.
-                    ///
-                    /// networkUrl: '',
-                    /// assetPath: '',
-                    /// fileUrl: '',
                   ),
                 ),
               );
@@ -652,13 +860,16 @@ class _TemplateEditorState extends State<TemplateEditor>
       configs: ProImageEditorConfigs(
         designMode: platformDesignMode,
         mainEditor: MainEditorConfigs(
+          tools: [
+            SubEditorMode.text,
+            SubEditorMode.template,
+          ],
           enableCloseButton: !isDesktopMode(context),
           widgets: MainEditorWidgets(
             bodyItems: (editor, rebuildStream) {
               return [
                 _buildSaveButton(rebuildStream),
                 _buildLoadButton(rebuildStream),
-                _buildLoadButton2(rebuildStream),
               ];
             },
           ),
@@ -667,29 +878,17 @@ class _TemplateEditorState extends State<TemplateEditor>
           initStateHistory: _loadedHistory,
         ),
         textEditor: textEditorConfigs,
-        emojiEditor: EmojiEditorConfigs(
-          enabled: false,
+        templateEditor: TemplateEditorConfigs(
+          enabled: true,
+          builder: (setLayer, scrollController) {
+            return buildTemplate(setLayer, scrollController);
+          },
         ),
         stickerEditor: StickerEditorConfigs(
           enabled: true,
           builder: (setLayer, scrollController) {
             return buildStickers(setLayer, scrollController);
           },
-        ),
-        filterEditor: FilterEditorConfigs(
-          enabled: false,
-        ),
-        blurEditor: BlurEditorConfigs(
-          enabled: false,
-        ),
-        cropRotateEditor: CropRotateEditorConfigs(
-          enabled: false,
-        ),
-        paintEditor: PaintEditorConfigs(
-          enabled: false,
-        ),
-        tuneEditor: TuneEditorConfigs(
-          enabled: false,
         ),
       ),
     );
@@ -701,156 +900,48 @@ class _TemplateEditorState extends State<TemplateEditor>
 
     List<TextLayer> textLayers = [];
 
-    // 바운딩 박스 관련 변수 미리 선언
-    double minX = 0;
-    double maxX = 0;
-    double minY = 0;
-    double maxY = 0;
-    double totalWidth = 0;
-    double totalHeight = 0;
-    double centerX = 0;
-    double centerY = 0;
-
     if (meta != null && meta.isNotEmpty) {
-      // print('\n=== meta 값들 ===');
       meta.forEach((key, value) {
         textLayers.add(
             Layer.fromMap(value as Map<String, dynamic>, id: key) as TextLayer);
         print('키: $key');
         print('값: $value');
-        // print('타입: ${value.runtimeType}');
-
-        // // Map 타입인 경우 내부 내용도 출력
-        // if (value is Map<String, dynamic>) {
-        //   print('  상세 내용:');
-        //   value.forEach((subKey, subValue) {
-        //     print('    $subKey: $subValue');
-        //   });
-        // }
-        // print('---');
       });
-
-      // 모든 레이어를 포함하는 바운딩 박스 계산
-      // if (textLayers.isNotEmpty) {
-      //   // 최소/최대 값 초기화
-      //   bool isFirst = true;
-
-      //   for (var layer in textLayers) {
-      //     // 각 레이어의 위치 (x, y)
-      //     final x = layer.offset.dx;
-      //     final y = layer.offset.dy;
-
-      //     // 레이어의 크기 고려 (width, height가 null이면 0으로 처리)
-      //     final width = layer.width ?? 0;
-      //     final height = layer.height ?? 0;
-
-      //     // 레이어의 실제 범위 계산 (offset이 중심점이라고 가정)
-      //     final leftEdge = x - (width / 2);
-      //     final rightEdge = x + (width / 2);
-      //     final topEdge = y - (height / 2);
-      //     final bottomEdge = y + (height / 2);
-
-      //     // 최소/최대 좌표 업데이트
-      //     if (isFirst) {
-      //       minX = leftEdge;
-      //       maxX = rightEdge;
-      //       minY = topEdge;
-      //       maxY = bottomEdge;
-      //       isFirst = false;
-      //     } else {
-      //       if (leftEdge < minX) minX = leftEdge;
-      //       if (rightEdge > maxX) maxX = rightEdge;
-      //       if (topEdge < minY) minY = topEdge;
-      //       if (bottomEdge > maxY) maxY = bottomEdge;
-      //     }
-      //   }
-
-      //   // 중점과 전체 크기 계산
-      //   centerX = (minX + maxX) / 2;
-      //   centerY = (minY + maxY) / 2;
-      //   totalWidth = maxX - minX;
-      //   totalHeight = maxY - minY;
-
-      //   if (totalWidth < 100) totalWidth = 100;
-      //   if (totalHeight < 100) totalHeight = 100;
-
-      //   print('\n=== 바운딩 박스 정보 ===');
-      //   print('최소 X: $minX, 최대 X: $maxX');
-      //   print('최소 Y: $minY, 최대 Y: $maxY');
-      //   print('중간점 (centerX, centerY): ($centerX, $centerY)');
-      //   print('전체 가로 길이: $totalWidth');
-      //   print('전체 세로 길이: $totalHeight');
-      // }
     } else {
       print('meta가 null이거나 비어있습니다');
     }
-
-    // TextLayer layer = Layer.fromMap(meta ?? {}) as TextLayer;
-
-    // editorKey.currentState?.addLayer(
-    //   WidgetLayer(
-    //     widget: Container(
-    //       width: 384,
-    //       height: 384,
-    //       color: Colors.amber,
-    //     ),
-    //   ),
-    // );
-    //return Container();
-    // return Row(
-    //   children: [
-    //     buildTextWidget(textLayers[0]),
-    //     buildTextWidget(textLayers[1]),
-    //   ],
-    // );
 
     return Stack(
       key: GlobalKey(),
       children: [
         for (var textLayer in textLayers)
-          Builder(builder: (context) {
-            Matrix4 transformMatrix = calcTransformMatrix(textLayer);
-            return AlignPositioned(
-              dx: textLayer.offset.dx,
-              dy: textLayer.offset.dy,
-              child: Transform(
-                transform: transformMatrix,
-                alignment: Alignment.center,
-                child: buildTextWidget(textLayer),
-              ),
-            );
-          }),
-        //buildTextWidget(textLayers[1]),
-        //for (var textLayer in textLayers) buildTextWidget(textLayer),
-        // Positioned(
-        //   top: 34,
-        //   left: 54,
-        //   child: Text('Hello2'),
-        // ),
-        // Positioned(
-        //   top: 68,
-        //   left: 108,
-        //   child: Text('Hello3'),
-        // ),
+          Builder(
+            builder: (context) {
+              Matrix4 transformMatrix = calcTransformMatrix(textLayer);
+              return AlignPositioned(
+                dx: textLayer.offset.dx,
+                dy: textLayer.offset.dy,
+                child: Transform(
+                  transform: transformMatrix,
+                  alignment: Alignment.center,
+                  child: buildTextWidget(textLayer),
+                ),
+              );
+            },
+          ),
       ],
     );
   }
 
   Matrix4 calcTransformMatrix(Layer layer) {
     return Matrix4.identity()
-      ..setEntry(3, 2, 0.001) // Add a small z-offset to avoid rendering issues
+      ..setEntry(3, 2, 0.001)
       ..rotateX(layer.flipY ? pi : 0)
       ..rotateY(layer.flipX ? pi : 0)
       ..rotateZ(layer.rotation);
   }
 
   Widget buildTextWidget(TextLayer layer) {
-    // return Container(
-    //   alignment: Alignment.center,
-    //   color: Colors.red,
-    //   width: 10,
-    //   height: 10,
-    // );
     var fontSize = textEditorConfigs.initFontSize * layer.scale;
     var style = TextStyle(
       fontSize: fontSize * layer.fontScale,

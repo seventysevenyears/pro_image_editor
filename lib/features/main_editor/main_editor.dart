@@ -1955,6 +1955,49 @@ class ProImageEditorState extends State<ProImageEditor>
     mainEditorCallbacks?.handleUpdateUI();
   }
 
+  void openTemplateEditor() async {
+    setState(() => layerInteractionManager.selectedLayerId = '');
+    _checkInteractiveViewer();
+    ServicesBinding.instance.keyboard.removeHandler(_onKeyEvent);
+    final effectiveBoxConstraints = templateEditorConfigs
+        .style.editorBoxConstraintsBuilder
+        ?.call(context, configs);
+    var sheetTheme = templateEditorConfigs.style.draggableSheetStyle;
+    WidgetLayer? layer = await showModalBottomSheet(
+      context: context,
+      backgroundColor: templateEditorConfigs.style.bottomSheetBackgroundColor,
+      constraints: effectiveBoxConstraints,
+      showDragHandle: templateEditorConfigs.style.showDragHandle,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => SafeArea(
+        child: DraggableScrollableSheet(
+          expand: sheetTheme.expand,
+          initialChildSize: sheetTheme.initialChildSize,
+          maxChildSize: sheetTheme.maxChildSize,
+          minChildSize: sheetTheme.minChildSize,
+          shouldCloseOnMinExtent: sheetTheme.shouldCloseOnMinExtent,
+          snap: sheetTheme.snap,
+          snapAnimationDuration: sheetTheme.snapAnimationDuration,
+          snapSizes: sheetTheme.snapSizes,
+          builder: (_, controller) {
+            return TemplateEditor(
+              configs: configs,
+              scrollController: controller,
+            );
+          },
+        ),
+      ),
+    );
+    ServicesBinding.instance.keyboard.addHandler(_onKeyEvent);
+    if (layer == null || !mounted) return;
+
+    addLayer(layer);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
   /// Moves a layer in the list to a new position.
   ///
   /// - `oldIndex` is the current index of the layer.
@@ -2710,6 +2753,7 @@ class ProImageEditorState extends State<ProImageEditor>
             openBlurEditor: openBlurEditor,
             openEmojiEditor: openEmojiEditor,
             openStickerEditor: openStickerEditor,
+            openTemplateEditor: openTemplateEditor,
           );
   }
 

@@ -53,4 +53,6 @@ enum SubEditorMode {
 
   /// The sticker editor.
   sticker,
+
+  template,
 }

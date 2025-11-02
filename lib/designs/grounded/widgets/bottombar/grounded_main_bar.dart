@@ -105,6 +105,15 @@ class GroundedMainBarState extends State<GroundedMainBar>
     widget.editor.addLayer(layer);
   }
 
+  void _openTemplateEditor() async {
+    Layer? layer = await widget.editor.openPage(GroundedTemplateEditor(
+      configs: configs,
+      callbacks: callbacks,
+    ));
+    if (layer == null || !mounted) return;
+    widget.editor.addLayer(layer);
+  }
+
   @override
   Widget build(BuildContext context) {
     return GroundedBottomWrapper(
@@ -318,6 +327,21 @@ class GroundedMainBarState extends State<GroundedMainBar>
                   color: _foreGroundColor,
                 ),
                 onPressed: _openStickerEditor,
+              );
+            case SubEditorMode.template:
+              if (!templateEditorConfigs.enabled) return null;
+              return FlatIconTextButton(
+                spacing: 7,
+                label: Text(
+                  i18n.templateEditor.bottomNavigationBarText,
+                  style: _bottomTextStyle,
+                ),
+                icon: Icon(
+                  templateEditorConfigs.icons.bottomNavBar,
+                  size: _bottomIconSize,
+                  color: _foreGroundColor,
+                ),
+                onPressed: _openTemplateEditor,
               );
           }
         })

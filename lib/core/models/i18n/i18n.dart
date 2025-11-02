@@ -6,6 +6,7 @@ import 'i18n_filter_editor.dart';
 import 'i18n_layer_interaction.dart';
 import 'i18n_paint_editor.dart';
 import 'i18n_sticker_editor.dart';
+import 'i18n_template_editor.dart';
 import 'i18n_text_editor.dart';
 import 'i18n_tune_editor.dart';
 import 'i18n_various.dart';
@@ -150,6 +151,7 @@ class I18n {
     this.blurEditor = const I18nBlurEditor(),
     this.emojiEditor = const I18nEmojiEditor(),
     this.stickerEditor = const I18nStickerEditor(),
+    this.templateEditor = const I18nTemplateEditor(),
     this.various = const I18nVarious(),
     this.importStateHistoryMsg = 'Initialize Editor',
     this.cancel = 'Cancel',
@@ -186,6 +188,9 @@ class I18n {
 
   /// Translations and messages specific to the sticker editor.
   final I18nStickerEditor stickerEditor;
+
+  /// Translations and messages specific to the template editor.
+  final I18nTemplateEditor templateEditor;
 
   /// Translations and messages specific to the crop and rotate editor.
   final I18nCropRotateEditor cropRotateEditor;

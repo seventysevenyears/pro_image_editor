@@ -46,6 +46,7 @@ class MainEditorBottombar extends StatelessWidget {
     required this.openBlurEditor,
     required this.openEmojiEditor,
     required this.openStickerEditor,
+    required this.openTemplateEditor,
   });
 
   /// Manages the main editor's controllers.
@@ -86,6 +87,9 @@ class MainEditorBottombar extends StatelessWidget {
 
   /// Callback for opening the sticker editor.
   final Function() openStickerEditor;
+
+  /// Callback for opening the template editor.
+  final Function() openTemplateEditor;
 
   final double _bottomIconSize = 22.0;
   Color get _foregroundColor => configs.mainEditor.style.bottomBarColor;
@@ -206,6 +210,14 @@ class MainEditorBottombar extends StatelessWidget {
                 onPressed: openEmojiEditor,
               );
 
+            case SubEditorMode.template:
+              if (!configs.templateEditor.enabled) return null;
+              return _buildActionButton(
+                key: const ValueKey('open-sticker-editor-btn'),
+                label: configs.i18n.templateEditor.bottomNavigationBarText,
+                icon: configs.templateEditor.icons.bottomNavBar,
+                onPressed: openTemplateEditor,
+              );
             case SubEditorMode.sticker:
               if (!configs.stickerEditor.enabled) return null;
               return _buildActionButton(

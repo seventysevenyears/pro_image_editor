@@ -11,4 +11,5 @@ export 'widgets/grounded_bottom_wrapper.dart';
 export 'widgets/grounded_emoji_editor.dart';
 export 'widgets/grounded_loading_dialog.dart';
 export 'widgets/grounded_sticker_editor.dart';
+export 'widgets/grounded_template_editor.dart';
 export 'widgets/grounded_text_size_slider.dart';

@@ -16,7 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'core/constants/example_constants.dart';
 import 'core/constants/example_list_constant.dart';
 import 'features/simple_file_editor.dart';
-import 'features/template_editor.dart';
+import 'features/template_example.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
           builder: (_) => kImageEditorExamples[index].page,
         );
       },
-      home: const TemplateEditor(),
+      home: const TemplateExample(),
       // home: const MyHomePage(),
       //home: const AutoFilePickerPage(),
     );

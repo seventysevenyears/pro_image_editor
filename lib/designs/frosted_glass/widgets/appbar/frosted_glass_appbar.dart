@@ -245,6 +245,15 @@ class _FrostedGlassActionBarState extends State<FrostedGlassActionBar> {
               );
             case SubEditorMode.sticker:
               return null;
+            case SubEditorMode.template:
+              if (!widget.editor.configs.templateEditor.enabled) return null;
+              return IconButton(
+                tooltip: widget
+                    .editor.configs.i18n.templateEditor.bottomNavigationBarText,
+                onPressed: widget.editor.openTemplateEditor,
+                icon: Icon(
+                    widget.editor.templateEditorConfigs.icons.bottomNavBar),
+              );
           }
         })
         .whereType<Widget>()
