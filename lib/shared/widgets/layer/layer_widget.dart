@@ -144,7 +144,8 @@ class _LayerWidgetState extends State<LayerWidget>
       _fractionalOffset = configs.templateEditor.layerFractionalOffset;
     } else if (_layer.isPaintLayer) {
       var layer = _layer as PaintLayer;
-      _layerType = layer.item.mode == PaintMode.blur ||
+      _layerType =
+          layer.item.mode == PaintMode.blur ||
               layer.item.mode == PaintMode.pixelate
           ? LayerWidgetType.censor
           : LayerWidgetType.canvas;
@@ -230,8 +231,9 @@ class _LayerWidgetState extends State<LayerWidget>
       final interaction = _layer.interaction;
       final offsetDistance =
           (event.position - _lastDownEvent!.position).distance;
-      final timeElapsed =
-          DateTime.now().difference(_tapDownTimestamp).inMilliseconds;
+      final timeElapsed = DateTime.now()
+          .difference(_tapDownTimestamp)
+          .inMilliseconds;
 
       // Ignore if pointer moved too much (exceeds tap slop)
       if (offsetDistance >= tapSlop) return;
@@ -240,17 +242,35 @@ class _LayerWidgetState extends State<LayerWidget>
       if (timeElapsed > tapTimeElapsed) return;
 
       // Fire onTap only if selection/edit is enabled and pointer is inside hit box
-      if ((interaction.enableSelection || interaction.enableEdit) &&
-          !_isOutsideHitBox()) {
+      final bool canSelect = interaction.enableSelection;
+      final bool canEdit = interaction.enableEdit;
+      final bool insideHitBox = !_isOutsideHitBox();
+      final bool isStylus = event.kind == PointerDeviceKind.stylus;
+      final bool isTextLayer = _layerType == LayerWidgetType.text;
+
+      if (!(canSelect || canEdit)) {
+        return;
+      }
+
+      // For stylus on TEXT layers only, bypass hit box check since it has
+      // precision issues with stylus input
+      // For paint layers: always use hit box validation (no bypass)
+      // to ensure taps on empty space inside shapes don't trigger edit.
+      final bool stylusTextBypass = isStylus && isTextLayer;
+
+      if (insideHitBox || stylusTextBypass) {
         _layersService?.handleLayerTap(_layer, _lastDownEvent!);
       }
     });
   }
 
   bool _isOutsideHitBox() {
-    return ((_isHitOutsideInCanvas() || _isHitOutsideInText()) &&
-            _layerType != LayerWidgetType.censor) &&
-        !_isSelected;
+    final bool hitOutsideCanvas = _isHitOutsideInCanvas();
+    final bool hitOutsideText = _isHitOutsideInText();
+    final bool isCensor = _layerType == LayerWidgetType.censor;
+    final bool isSelected = _isSelected;
+
+    return ((hitOutsideCanvas || hitOutsideText) && !isCensor) && !isSelected;
   }
 
   /// Checks if the hit is outside the canvas for certain types of layers.
@@ -295,8 +315,9 @@ class _LayerWidgetState extends State<LayerWidget>
   Widget build(BuildContext context) {
     Matrix4 transformMatrix = calcTransformMatrix();
 
-    final overlayPadding =
-        _isSelected ? layerInteraction.style.overlayPadding : EdgeInsets.zero;
+    final overlayPadding = _isSelected
+        ? layerInteraction.style.overlayPadding
+        : EdgeInsets.zero;
 
     final adjustedLeft =
         offsetX - overlayPadding.horizontal * (_fractionalOffset.dx + 0.5);
@@ -337,7 +358,9 @@ class _LayerWidgetState extends State<LayerWidget>
       isInteractive: widget.isInteractive,
       enableVisibleOverlay: _enableVisibleOverlay,
       onScaleRotateDown: (details) => _layersService?.handleScaleRotateDown(
-          context.size ?? Size.zero, _layer),
+        context.size ?? Size.zero,
+        _layer,
+      ),
       onScaleRotateUp: (_) => _layersService?.handleScaleRotateUp(),
       onRemoveLayer: () => _layersService?.handleRemoveLayer(_layer),
       onDuplicate: widget.onDuplicate,
@@ -345,47 +368,50 @@ class _LayerWidgetState extends State<LayerWidget>
       onUngroupLayers: () => _layersService?.handleUngroupLayers(_layer),
       child: _buildCursor(
         child: ValueListenableBuilder(
-            valueListenable: _lastHitState,
-            builder: (_, __, ___) {
-              return GestureDetector(
+          valueListenable: _lastHitState,
+          builder: (_, _, _) {
+            return GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onSecondaryTapUp: isDesktop ? _onSecondaryTapUp : null,
+              child: Listener(
                 behavior: HitTestBehavior.translucent,
-                onSecondaryTapUp: isDesktop ? _onSecondaryTapUp : null,
-                child: Listener(
-                  behavior: HitTestBehavior.translucent,
-                  onPointerDown: _onPointerDown,
-                  onPointerUp: _onPointerUp,
-                  child: Padding(
-                    padding: !_isSelected
-                        ? EdgeInsets.zero
-                        : layerInteraction.style.overlayPadding,
-                    child: FittedBox(
-                      key: _layer.keyInternalSize,
-                      child: _buildContent(),
-                    ),
+                onPointerDown: _onPointerDown,
+                onPointerUp: _onPointerUp,
+                child: Padding(
+                  padding: !_isSelected
+                      ? EdgeInsets.zero
+                      : layerInteraction.style.overlayPadding,
+                  child: FittedBox(
+                    key: _layer.keyInternalSize,
+                    child: _buildContent(),
                   ),
                 ),
-              );
-            }),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _buildCursor({required Widget child}) {
     return ValueListenableBuilder(
-        valueListenable: _showMoveCursor,
-        builder: (_, showCursor, __) {
-          return MouseRegion(
-            hitTestBehavior: HitTestBehavior.translucent,
-            cursor: showCursor &&
-                    _layer.interaction.enableMove &&
-                    widget.enableMouseCursor
-                ? layerInteraction.style.hoverCursor
-                : MouseCursor.defer,
-            onEnter: (event) => _onHoverEnter(),
-            onExit: (event) => _onHoverLeave(),
-            child: child,
-          );
-        });
+      valueListenable: _showMoveCursor,
+      builder: (_, showCursor, _) {
+        return MouseRegion(
+          hitTestBehavior: HitTestBehavior.translucent,
+          cursor:
+              showCursor &&
+                  _layer.interaction.enableMove &&
+                  widget.enableMouseCursor
+              ? layerInteraction.style.hoverCursor
+              : MouseCursor.defer,
+          onEnter: (event) => _onHoverEnter(),
+          onExit: (event) => _onHoverLeave(),
+          child: child,
+        );
+      },
+    );
   }
 
   /// Builds the content widget based on the type of layer being displayed.

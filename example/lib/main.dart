@@ -360,9 +360,9 @@ class _AutoFilePickerPageState extends State<AutoFilePickerPage> {
         if (!context.mounted) return;
 
         // 이미지 에디터로 바로 이동
-        await Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => SimpleFileEditor(file: file)),
-        );
+        // await Navigator.of(context).pushReplacement(
+        //   MaterialPageRoute(builder: (context) => SimpleFileEditor(file: file)),
+        // );
       } else {
         // 사용자가 파일 선택을 취소한 경우 기본 홈페이지로 이동
         if (context.mounted) {

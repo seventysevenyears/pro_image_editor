@@ -25,6 +25,8 @@ class VideoEditorConfigs {
     this.isAudioSupported = true,
     this.enablePlayButton = false,
     this.enableEstimatedFileSize = false,
+    this.enableTrimBar = true,
+    this.showControls = true,
     this.controlsPosition = VideoEditorControlPosition.top,
     this.minTrimDuration = const Duration(seconds: 7),
     this.maxTrimDuration,
@@ -34,11 +36,11 @@ class VideoEditorConfigs {
     this.trimBarMinScale = 1,
     this.trimBarMaxScale = 3,
     this.playTimeSmoothingDuration = Duration.zero,
-  })  : assert(trimBarMinScale > 0, 'trimBarMinScale must be greater than 0'),
-        assert(
-          trimBarMaxScale > trimBarMinScale,
-          'trimBarMaxScale must be greater than trimBarMinScale',
-        );
+  }) : assert(trimBarMinScale > 0, 'trimBarMinScale must be greater than 0'),
+       assert(
+         trimBarMaxScale > trimBarMinScale,
+         'trimBarMaxScale must be greater than trimBarMinScale',
+       );
 
   /// Configurable icons for the video editor.
   final VideoEditorIcons icons;
@@ -75,6 +77,19 @@ class VideoEditorConfigs {
   /// (VBR), and the actual bitrate may be constrained by device-specific
   /// limits. That mean the displayed estimated file size could be wrong.
   final bool enableEstimatedFileSize;
+
+  /// Determines whether the trim bar should be visible in the editor.
+  ///
+  /// When `true`, a trim bar is displayed, allowing the user to adjust
+  /// the start and end positions of the selected audio or video segment.
+  /// When `false`, the trim bar is hidden.
+  final bool enableTrimBar;
+
+  /// Whether to show the video editor controls UI.
+  ///
+  /// When set to `false`, the controls widget (play/pause, mute, trim bar,
+  /// etc.) will be hidden.
+  final bool showControls;
 
   /// Minimum scale factor for the trim bar.
   final double trimBarMinScale;
@@ -117,6 +132,8 @@ class VideoEditorConfigs {
     bool? isAudioSupported,
     bool? enablePlayButton,
     bool? enableEstimatedFileSize,
+    bool? enableTrimBar,
+    bool? showControls,
     double? trimBarMinScale,
     double? trimBarMaxScale,
     Duration? playTimeSmoothingDuration,
@@ -139,6 +156,8 @@ class VideoEditorConfigs {
       enablePlayButton: enablePlayButton ?? this.enablePlayButton,
       enableEstimatedFileSize:
           enableEstimatedFileSize ?? this.enableEstimatedFileSize,
+      enableTrimBar: enableTrimBar ?? this.enableTrimBar,
+      showControls: showControls ?? this.showControls,
       trimBarMinScale: trimBarMinScale ?? this.trimBarMinScale,
       trimBarMaxScale: trimBarMaxScale ?? this.trimBarMaxScale,
       playTimeSmoothingDuration:
@@ -150,7 +169,8 @@ class VideoEditorConfigs {
           animatedIndicatorDuration ?? this.animatedIndicatorDuration,
       animatedIndicatorSwitchInCurve:
           animatedIndicatorSwitchInCurve ?? this.animatedIndicatorSwitchInCurve,
-      animatedIndicatorSwitchOutCurve: animatedIndicatorSwitchOutCurve ??
+      animatedIndicatorSwitchOutCurve:
+          animatedIndicatorSwitchOutCurve ??
           this.animatedIndicatorSwitchOutCurve,
     );
   }
@@ -169,6 +189,7 @@ class VideoEditorConfigs {
         other.isAudioSupported == isAudioSupported &&
         other.enablePlayButton == enablePlayButton &&
         other.enableEstimatedFileSize == enableEstimatedFileSize &&
+        other.showControls == showControls &&
         other.trimBarMinScale == trimBarMinScale &&
         other.trimBarMaxScale == trimBarMaxScale &&
         other.playTimeSmoothingDuration == playTimeSmoothingDuration &&
@@ -193,6 +214,7 @@ class VideoEditorConfigs {
         isAudioSupported.hashCode ^
         enablePlayButton.hashCode ^
         enableEstimatedFileSize.hashCode ^
+        showControls.hashCode ^
         trimBarMinScale.hashCode ^
         trimBarMaxScale.hashCode ^
         playTimeSmoothingDuration.hashCode ^
@@ -211,5 +233,5 @@ enum VideoEditorControlPosition {
   top,
 
   /// Place the controls on the bottom of the screen.
-  bottom
+  bottom,
 }

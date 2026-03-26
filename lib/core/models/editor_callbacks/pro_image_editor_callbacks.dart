@@ -1,5 +1,7 @@
 import '../../enums/editor_mode.dart';
+import 'audio_editor_callbacks.dart';
 import 'blur_editor_callbacks.dart';
+import 'clips_editor_callbacks.dart';
 import 'crop_rotate_editor_callbacks.dart';
 import 'editor_callbacks_typedef.dart';
 import 'emoji_editor_callbacks.dart';
@@ -13,7 +15,9 @@ import 'tune_editor_callbacks.dart';
 import 'video_editor_callbacks.dart';
 
 export '../../enums/sub_editors_name.dart';
+export 'audio_editor_callbacks.dart';
 export 'blur_editor_callbacks.dart';
+export 'clips_editor_callbacks.dart';
 export 'crop_rotate_editor_callbacks.dart';
 export 'editor_callbacks_typedef.dart';
 export 'emoji_editor_callbacks.dart';
@@ -45,6 +49,8 @@ class ProImageEditorCallbacks {
     this.templateEditorCallbacks,
     this.tuneEditorCallbacks,
     this.videoEditorCallbacks,
+    this.audioEditorCallbacks,
+    this.clipsEditorCallbacks,
   });
 
   /// A callback function that is triggered when the image generation is
@@ -134,6 +140,12 @@ class ProImageEditorCallbacks {
   /// Callbacks from the video editor.
   final VideoEditorCallbacks? videoEditorCallbacks;
 
+  /// Callbacks from the audio editor.
+  final AudioEditorCallbacks? audioEditorCallbacks;
+
+  /// Callbacks from the clips editor.
+  final ClipsEditorCallbacks? clipsEditorCallbacks;
+
   /// Creates a copy with modified editor callbacks.
   ProImageEditorCallbacks copyWith({
     Function()? onImageEditingStarted,
@@ -152,6 +164,8 @@ class ProImageEditorCallbacks {
     TemplateEditorCallbacks? templateEditorCallbacks,
     TuneEditorCallbacks? tuneEditorCallbacks,
     VideoEditorCallbacks? videoEditorCallbacks,
+    AudioEditorCallbacks? audioEditorCallbacks,
+    ClipsEditorCallbacks? clipsEditorCallbacks,
   }) {
     return ProImageEditorCallbacks(
       onImageEditingStarted:
@@ -177,6 +191,8 @@ class ProImageEditorCallbacks {
           templateEditorCallbacks ?? this.templateEditorCallbacks,
       tuneEditorCallbacks: tuneEditorCallbacks ?? this.tuneEditorCallbacks,
       videoEditorCallbacks: videoEditorCallbacks ?? this.videoEditorCallbacks,
+      audioEditorCallbacks: audioEditorCallbacks ?? this.audioEditorCallbacks,
+      clipsEditorCallbacks: clipsEditorCallbacks ?? this.clipsEditorCallbacks,
     );
   }
 }

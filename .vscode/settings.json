@@ -1,29 +1,30 @@
 {
-    "cSpell.words": [
-        "bbox",
-        "Bezier",
-        "Cooldown",
-        "diegotori",
-        "dismissibility",
-        "ellipsize",
-        "endtemplate",
-        "fdtbl",
-        "LTRBR",
-        "overriden",
-        "Rgba",
-        "selectability",
-        "trackpad",
-        "unawaited",
-        "uvac",
-        "uvdc"
-    ],
-    "diffEditor.experimental.showEmptyDecorations": true,
-    "diffEditor.hideUnchangedRegions.enabled": false,
-    "editor.minimap.showMarkSectionHeaders": true,
-    "github.copilot.enable": {
-        "*": false,
-        "plaintext": false,
-        "markdown": false,
-        "scminput": false
-    }
+  "cSpell.words": [
+    "bbox",
+    "Bezier",
+    "Cooldown",
+    "diegotori",
+    "dismissibility",
+    "ellipsize",
+    "endtemplate",
+    "fdtbl",
+    "LTRBR",
+    "overriden",
+    "Rgba",
+    "selectability",
+    "trackpad",
+    "unawaited",
+    "uvac",
+    "uvdc"
+  ],
+  "diffEditor.experimental.showEmptyDecorations": true,
+  "diffEditor.hideUnchangedRegions.enabled": false,
+  "editor.minimap.showMarkSectionHeaders": true,
+  "github.copilot.enable": {
+    "*": false,
+    "plaintext": false,
+    "markdown": false,
+    "scminput": false
+  },
+  "dart.flutterSdkPath": ".fvm/versions/stable"
 }

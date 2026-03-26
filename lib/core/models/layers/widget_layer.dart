@@ -5,6 +5,7 @@ import '../../../shared/utils/parser/double_parser.dart';
 import '/core/constants/int_constants.dart';
 import '/core/platform/io/io_helper.dart';
 import '/shared/services/import_export/types/widget_loader.dart';
+import '/shared/utils/parser/double_parser.dart';
 import '/shared/utils/parser/int_parser.dart';
 import '../editor_image.dart';
 import 'layer.dart';
@@ -61,11 +62,14 @@ class WidgetLayer extends Layer {
 
     /// Determines the position of the widget in the list.
     int widgetPosition = safeParseInt(
-        map[keyConverter('recordPosition')] ?? map['listPosition'],
-        fallback: -1);
+      map[keyConverter('recordPosition')] ?? map['listPosition'],
+      fallback: -1,
+    );
 
-    var exportConfigs =
-        WidgetLayerExportConfigs.fromMap(map[keyConverter('exportConfigs')]);
+    final layerWidth = map[keyConverter('width')];
+    var exportConfigs = WidgetLayerExportConfigs.fromMap(
+      map[keyConverter('exportConfigs')],
+    );
 
     /// Widget to display a widget or a placeholder if not found.
     Widget widget = kDebugMode
@@ -126,9 +130,7 @@ class WidgetLayer extends Layer {
       meta: layer.meta,
       groupId: layer.groupId,
       widget: widget,
-      width: map[keyConverter('width')] != null
-          ? safeParseDouble(map[keyConverter('width')])
-          : null,
+      width: layerWidth != null ? safeParseDouble(layerWidth) : null,
       exportConfigs: exportConfigs,
       boxConstraints: layer.boxConstraints,
     );
@@ -137,10 +139,8 @@ class WidgetLayer extends Layer {
   /// The widget to display on the layer.
   Widget widget;
 
-  /// The width of the widget layer.
-  ///
-  /// If specified, this width will be used instead of the default
-  /// `initWidth` from `StickerEditorConfigs`.
+  /// Optional layer width. If no value is set, it will fallback to the
+  /// `initWidth` inside of the `StickerEditorConfigs`.
   double? width;
 
   /// Configuration settings for exporting a widget layer.
@@ -171,7 +171,8 @@ class WidgetLayer extends Layer {
         maxDecimalPlaces: maxDecimalPlaces,
         enableMinify: enableMinify,
       ),
-      if (recordPosition != null) 'recordPosition': recordPosition,
+      'recordPosition': ?recordPosition,
+      if (width != null) 'width': width,
       if (width != null) 'width': width,
       if (exportConfigMap.isNotEmpty) 'exportConfigs': exportConfigMap,
       'type': 'widget',
@@ -190,6 +191,7 @@ class WidgetLayer extends Layer {
         maxDecimalPlaces: maxDecimalPlaces,
         enableMinify: enableMinify,
       ),
+      if (layer is WidgetLayer && width != layer.width) 'width': width,
     };
   }
 
@@ -234,9 +236,13 @@ class WidgetLayer extends Layer {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<WidgetLayerExportConfigs>(
-      'exportConfigs',
-      exportConfigs,
-    ));
+    properties
+      ..add(
+        DiagnosticsProperty<WidgetLayerExportConfigs>(
+          'exportConfigs',
+          exportConfigs,
+        ),
+      )
+      ..add(DoubleProperty('width', width));
   }
 }

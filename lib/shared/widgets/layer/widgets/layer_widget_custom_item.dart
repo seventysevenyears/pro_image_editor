@@ -24,10 +24,7 @@ class LayerWidgetCustomItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: (layer.width ?? stickerEditorConfigs.initWidth) * layer.scale,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: layer.widget,
-      ),
+      child: FittedBox(fit: BoxFit.contain, child: layer.widget),
     );
   }
 

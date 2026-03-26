@@ -56,6 +56,7 @@ class CropRotateEditorStyle {
     this.appBarBackground = kImageEditorAppBarBackground,
     this.appBarColor = kImageEditorAppBarColor,
     this.helperLineColor = const Color(0xFF000000),
+    this.helperLineWidth = 0.5,
     this.background = kImageEditorBackground,
     this.cropCornerColor = kImageEditorPrimaryColor,
     this.cropOverlayColor = const Color(0xFF000000),
@@ -65,8 +66,22 @@ class CropRotateEditorStyle {
     this.aspectRatioSheetForegroundColor = const Color(0xFFFAFAFA),
     this.cropCornerLength = 36,
     this.cropCornerThickness = 6,
+    this.cropOverlayOpacity = 0.7,
+    this.cropOverlayInteractionOpacity = 0.25,
     this.uiOverlayStyle = kImageEditorUiOverlayStyle,
-  });
+  }) : assert(
+         cropOverlayOpacity >= 0.0 && cropOverlayOpacity <= 1.0,
+         'cropOverlayOpacity must be between 0.0 and 1.0',
+       ),
+       assert(
+         cropOverlayInteractionOpacity >= 0.0,
+         'cropOverlayInteractionOpacity must be non-negative',
+       ),
+       assert(
+         cropOverlayInteractionOpacity <= cropOverlayOpacity,
+         'cropOverlayInteractionOpacity must not be greater than '
+         'cropOverlayOpacity',
+       );
 
   /// Background color of the app bar in the crop and rotate editor.
   final Color appBarBackground;
@@ -95,6 +110,12 @@ class CropRotateEditorStyle {
   /// Color from the helper lines when moving the image.
   final Color helperLineColor;
 
+  /// The width (thickness) of the helper lines drawn inside the crop area.
+  ///
+  /// Set to `0` to hide the helper lines entirely.
+  /// Defaults to `0.5`.
+  final double helperLineWidth;
+
   /// This refers to the overlay area atop the image when the cropping area is
   /// smaller than the image.
   ///
@@ -107,6 +128,23 @@ class CropRotateEditorStyle {
 
   /// The thickness of the crop corner.
   final double cropCornerThickness;
+
+  /// The opacity of the crop overlay area when no interaction is active.
+  ///
+  /// This controls the transparency level of the overlay that appears on top
+  /// of the image outside the crop area when the user is not actively
+  /// interacting with the crop bounds.
+  final double cropOverlayOpacity;
+
+  /// The opacity reduction applied during active interactions.
+  ///
+  /// This value is subtracted from [cropOverlayOpacity] to calculate the actual
+  /// overlay opacity when the user is actively interacting with the crop bounds
+  /// (e.g., dragging corners or moving the crop area).
+  ///
+  /// For example, if [cropOverlayOpacity] is 0.7 and this value is 0.25,
+  /// the real opacity during interaction will be 0.45 (0.7 - 0.25).
+  final double cropOverlayInteractionOpacity;
 
   /// UI overlay style, defining the appearance of system status bars.
   final SystemUiOverlayStyle uiOverlayStyle;
@@ -127,9 +165,12 @@ class CropRotateEditorStyle {
     Color? background,
     Color? cropCornerColor,
     Color? helperLineColor,
+    double? helperLineWidth,
     Color? cropOverlayColor,
     double? cropCornerLength,
     double? cropCornerThickness,
+    double? cropOverlayOpacity,
+    double? cropOverlayInteractionOpacity,
     SystemUiOverlayStyle? uiOverlayStyle,
   }) {
     return CropRotateEditorStyle(
@@ -137,16 +178,22 @@ class CropRotateEditorStyle {
       appBarColor: appBarColor ?? this.appBarColor,
       bottomBarBackground: bottomBarBackground ?? this.bottomBarBackground,
       bottomBarColor: bottomBarColor ?? this.bottomBarColor,
-      aspectRatioSheetBackgroundColor: aspectRatioSheetBackgroundColor ??
+      aspectRatioSheetBackgroundColor:
+          aspectRatioSheetBackgroundColor ??
           this.aspectRatioSheetBackgroundColor,
-      aspectRatioSheetForegroundColor: aspectRatioSheetForegroundColor ??
+      aspectRatioSheetForegroundColor:
+          aspectRatioSheetForegroundColor ??
           this.aspectRatioSheetForegroundColor,
       background: background ?? this.background,
       cropCornerColor: cropCornerColor ?? this.cropCornerColor,
       helperLineColor: helperLineColor ?? this.helperLineColor,
+      helperLineWidth: helperLineWidth ?? this.helperLineWidth,
       cropOverlayColor: cropOverlayColor ?? this.cropOverlayColor,
       cropCornerLength: cropCornerLength ?? this.cropCornerLength,
       cropCornerThickness: cropCornerThickness ?? this.cropCornerThickness,
+      cropOverlayOpacity: cropOverlayOpacity ?? this.cropOverlayOpacity,
+      cropOverlayInteractionOpacity:
+          cropOverlayInteractionOpacity ?? this.cropOverlayInteractionOpacity,
       uiOverlayStyle: uiOverlayStyle ?? this.uiOverlayStyle,
     );
   }

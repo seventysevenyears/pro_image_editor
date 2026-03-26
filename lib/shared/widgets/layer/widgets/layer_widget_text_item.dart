@@ -66,22 +66,32 @@ class LayerWidgetTextItem extends StatelessWidget {
       }
     });
 
+    // Get the full style including shadows
+    TextStyle finalStyle;
+    if (layer.textStyle != null) {
+      finalStyle = layer.textStyle!.copyWith(
+        fontSize: style.fontSize,
+        fontWeight: layer.textStyle!.fontWeight ?? style.fontWeight,
+        color: style.color,
+        fontFamily: layer.textStyle!.fontFamily ?? style.fontFamily,
+        shadows: layer.textStyle!.shadows ?? style.shadows,
+      );
+    } else {
+      finalStyle = style;
+    }
+
     return RoundedBackgroundText(
       key: key,
       enableHitBoxCorrection: true,
-      maxTextWidth:
-          maxTextWidth == null ? double.infinity : maxTextWidth * layer.scale,
+      maxTextWidth: maxTextWidth == null
+          ? double.infinity
+          : maxTextWidth * layer.scale,
       onHitTestResult: _handleLayerHit,
       layer.text.toString(),
       backgroundColor: layer.background,
       textAlign: layer.align,
-      style: layer.textStyle?.copyWith(
-            fontSize: style.fontSize,
-            fontWeight: style.fontWeight,
-            color: style.color,
-            fontFamily: style.fontFamily,
-          ) ??
-          style,
+      style: finalStyle,
+      leadingDistribution: textEditorConfigs.style.leadingDistribution,
     );
   }
 

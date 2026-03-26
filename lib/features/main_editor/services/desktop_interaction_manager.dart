@@ -87,12 +87,17 @@ class DesktopInteractionManager {
     required Function onEscape,
     required Function(bool) onUndoRedo,
   }) {
-    if (!context.mounted || event is! KeyDownEvent) return false;
+    if (!context.mounted ||
+        !configs.mainEditor.enableKeyboardShortcuts ||
+        event is! KeyDownEvent) {
+      return false;
+    }
 
     final key = event.logicalKey.keyLabel;
 
-    bool? stopPropagate =
-        callbacks.mainEditorCallbacks?.onKeyboardEvent?.call(event);
+    bool? stopPropagate = callbacks.mainEditorCallbacks?.onKeyboardEvent?.call(
+      event,
+    );
 
     if (stopPropagate == true) return true;
 
@@ -124,7 +129,9 @@ class DesktopInteractionManager {
         _keyboardRotate(isLeftRotation: false, selectedLayers: selectedLayers);
         break;
       case 'Z':
-        if (_keyboard.isCtrlPressed) onUndoRedo(!_keyboard.isShiftPressed);
+        if (_keyboard.isCtrlPressed && !_keyboard.isAltPressed) {
+          onUndoRedo(!_keyboard.isShiftPressed);
+        }
         break;
     }
 
@@ -156,17 +163,13 @@ class DesktopInteractionManager {
     if (selectedLayers.isEmpty) return;
 
     for (Layer layer in selectedLayers) {
-      double factor = layer is PaintLayer
-          ? 0.1
-          : layer is TextLayer
-              ? 0.15
-              : configs.textEditor.initFontSize / 50;
+      double factor = 1.1;
       if (isZoomIn) {
         layer
-          ..scale -= factor
+          ..scale /= factor
           ..scale = max(0.1, layer.scale);
       } else {
-        layer.scale += factor;
+        layer.scale *= factor;
       }
     }
 
@@ -190,19 +193,15 @@ class DesktopInteractionManager {
           layer.rotation += 0.087266;
         }
       } else {
-        double factor = layer.isPaintLayer
-            ? 0.1
-            : layer.isTextLayer
-                ? 0.15
-                : configs.textEditor.initFontSize / 50;
+        double factor = 1.1;
         if (interactiveViewer?.isInteractionEnabled == true) {
           // only scale if interaction is enabled (that means we might zoom in/out)
           if (event.scrollDelta.dy > 0) {
             layer
-              ..scale -= factor
+              ..scale /= factor
               ..scale = max(0.1, layer.scale);
           } else if (event.scrollDelta.dy < 0) {
-            layer.scale += factor;
+            layer.scale *= factor;
           }
         }
       }

@@ -885,7 +885,6 @@ class _TemplateExampleState extends State<TemplateExample>
           },
         ),
         stickerEditor: StickerEditorConfigs(
-          enabled: true,
           builder: (setLayer, scrollController) {
             return buildStickers(setLayer, scrollController);
           },

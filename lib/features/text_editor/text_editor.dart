@@ -29,6 +29,7 @@ class TextEditor extends StatefulWidget with SimpleConfigsAccess {
     this.callbacks = const ProImageEditorCallbacks(),
     this.configs = const ProImageEditorConfigs(),
     this.scaleFactor = 1.0,
+    this.imageSize = Size.zero,
     required this.theme,
   });
   @override
@@ -45,6 +46,9 @@ class TextEditor extends StatefulWidget with SimpleConfigsAccess {
 
   /// The text layer data to be edited, if any.
   final TextLayer? layer;
+
+  /// The size of the image being edited, used for boundary text wrapping.
+  final Size imageSize;
 
   /// A factor by which the textfield is scaled.
   ///
@@ -86,9 +90,15 @@ class TextEditorState extends State<TextEditor>
   late double _fontScale;
   final double _cursorWidth = 2.0;
 
-  double? get _maxTextWidth => textEditorConfigs.enableAutoOverflow
-      ? editorBodySize.width - 32 - _cursorWidth
-      : null;
+  double? get _maxTextWidth {
+    if (textEditorConfigs.enableImageBoundaryTextWrap &&
+        widget.imageSize != Size.zero) {
+      return widget.imageSize.width - 32 - _cursorWidth;
+    }
+    return textEditorConfigs.enableAutoOverflow
+        ? editorBodySize.width - 32 - _cursorWidth
+        : null;
+  }
 
   /// Gets the primary color.
   Color get primaryColor => _primaryColor;
@@ -117,7 +127,8 @@ class TextEditorState extends State<TextEditor>
     _fontScale = textEditorConfigs.initFontScale;
     backgroundColorMode = textEditorConfigs.initialBackgroundColorMode;
 
-    selectedTextStyle = widget.layer?.textStyle ??
+    selectedTextStyle =
+        widget.layer?.textStyle ??
         textEditorConfigs.customTextStyles?.first ??
         textEditorConfigs.defaultTextStyle;
     _initializeFromLayer();
@@ -272,7 +283,7 @@ class TextEditorState extends State<TextEditor>
         min: textEditorConfigs.minFontScale,
         divisions:
             (textEditorConfigs.maxFontScale - textEditorConfigs.minFontScale) ~/
-                0.1,
+            0.1,
         state: this,
         showFactorInTitle: true,
         closeButton: textEditorConfigs.widgets.fontSizeCloseButton,
@@ -314,7 +325,10 @@ class TextEditorState extends State<TextEditor>
         textStyle: selectedTextStyle,
         customSecondaryColor: _secondaryColor != null,
         maxTextWidth:
-            textEditorConfigs.enableAutoOverflow ? _maxTextWidth : null,
+            (textEditorConfigs.enableAutoWrapOnLayer ||
+                textEditorConfigs.enableImageBoundaryTextWrap)
+            ? _maxTextWidth
+            : null,
       );
 
       Navigator.of(context).pop(layer);
@@ -332,18 +346,26 @@ class TextEditorState extends State<TextEditor>
           canPop: textEditorConfigs.enableGesturePop,
           child: Theme(
             data: widget.theme.copyWith(
-                tooltipTheme:
-                    widget.theme.tooltipTheme.copyWith(preferBelow: true)),
+              tooltipTheme: widget.theme.tooltipTheme.copyWith(
+                preferBelow: true,
+              ),
+            ),
             child: SafeArea(
               top: textEditorConfigs.safeArea.top,
               bottom: textEditorConfigs.safeArea.bottom,
               left: textEditorConfigs.safeArea.left,
               right: textEditorConfigs.safeArea.right,
-              child: Scaffold(
-                backgroundColor: textEditorConfigs.style.background,
-                appBar: _buildAppBar(constraints),
-                body: _buildBody(),
-                bottomNavigationBar: _buildBottomBar(),
+              child: MediaQuery.removePadding(
+                context: context,
+                removeBottom: !textEditorConfigs.safeArea.bottom,
+                child: Scaffold(
+                  resizeToAvoidBottomInset:
+                      textEditorConfigs.resizeToAvoidBottomInset,
+                  backgroundColor: textEditorConfigs.style.background,
+                  appBar: _buildAppBar(constraints),
+                  body: _buildBody(),
+                  bottomNavigationBar: _buildBottomBar(),
+                ),
               ),
             ),
           ),
@@ -355,8 +377,10 @@ class TextEditorState extends State<TextEditor>
   /// Builds the app bar for the text editor.
   PreferredSizeWidget? _buildAppBar(BoxConstraints constraints) {
     if (textEditorConfigs.widgets.appBar != null) {
-      return textEditorConfigs.widgets.appBar!
-          .call(this, _rebuildController.stream);
+      return textEditorConfigs.widgets.appBar!.call(
+        this,
+        _rebuildController.stream,
+      );
     }
 
     return TextEditorAppBar(
@@ -377,8 +401,10 @@ class TextEditorState extends State<TextEditor>
   /// Returns a [Widget] representing the bottom navigation bar.
   Widget? _buildBottomBar() {
     if (textEditorConfigs.widgets.bottomBar != null) {
-      return textEditorConfigs.widgets.bottomBar!
-          .call(this, _rebuildController.stream);
+      return textEditorConfigs.widgets.bottomBar!.call(
+        this,
+        _rebuildController.stream,
+      );
     }
 
     if (isDesktop &&
@@ -391,37 +417,44 @@ class TextEditorState extends State<TextEditor>
 
   /// Builds the body of the text editor.
   Widget _buildBody() {
-    return LayoutBuilder(builder: (_, constraints) {
-      editorBodySize = constraints.biggest;
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        editorBodySize = constraints.biggest;
 
-      return GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: done,
-        child: Stack(
-          children: [
-            if (textEditorConfigs.widgets.bodyItems != null)
-              ...textEditorConfigs.widgets.bodyItems!(
-                this,
-                _rebuildController.stream,
-              ),
-            _buildTextField(),
-            _buildColorPicker(),
-            if (textEditorConfigs.showSelectFontStyleBottomBar)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: kBottomNavigationBarHeight,
-                child: TextEditorBottomBar(
-                  configs: widget.configs,
-                  selectedStyle: selectedTextStyle,
-                  onFontChange: setTextStyle,
+        return GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: textEditorConfigs.enableTapOutsideToSave ? done : null,
+          child: Stack(
+            children: [
+              if (textEditorConfigs.widgets.bodyItems != null)
+                ...textEditorConfigs.widgets.bodyItems!(
+                  this,
+                  _rebuildController.stream,
                 ),
-              ),
-          ],
-        ),
-      );
-    });
+              _buildTextField(),
+              _buildColorPicker(),
+              if (textEditorConfigs.showSelectFontStyleBottomBar)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: kBottomNavigationBarHeight,
+                  child: TextEditorBottomBar(
+                    configs: widget.configs,
+                    selectedStyle: selectedTextStyle,
+                    onFontChange: setTextStyle,
+                  ),
+                ),
+              if (textEditorConfigs.widgets.bodyItemsOverlay != null)
+                ...textEditorConfigs.widgets.bodyItemsOverlay!(
+                  this,
+                  _rebuildController.stream,
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildColorPicker() {
@@ -466,12 +499,18 @@ class TextEditorState extends State<TextEditor>
       ..add(StringProperty('heroTag', widget.heroTag))
       ..add(DoubleProperty('scaleFactor', widget.scaleFactor))
       ..add(DiagnosticsProperty<TextLayer?>('layer', widget.layer))
+      ..add(DiagnosticsProperty<Size>('imageSize', widget.imageSize))
       ..add(DiagnosticsProperty<ThemeData>('theme', widget.theme))
       ..add(DiagnosticsProperty<TextAlign>('align', align))
-      ..add(DiagnosticsProperty<TextStyle>(
-          'selectedTextStyle', selectedTextStyle))
-      ..add(EnumProperty<LayerBackgroundMode>(
-          'backgroundColorMode', backgroundColorMode))
+      ..add(
+        DiagnosticsProperty<TextStyle>('selectedTextStyle', selectedTextStyle),
+      )
+      ..add(
+        EnumProperty<LayerBackgroundMode>(
+          'backgroundColorMode',
+          backgroundColorMode,
+        ),
+      )
       ..add(DoubleProperty('fontScale', _fontScale))
       ..add(ColorProperty('primaryColor', primaryColor))
       ..add(ColorProperty('secondaryColor', secondaryColor))

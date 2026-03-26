@@ -1,7 +1,3 @@
-// ignore_for_file: deprecated_member_use_from_same_package
-// TODO: Remove the deprecated values when releasing version 12.0.0.
-
-// Flutter imports:
 import 'package:flutter/widgets.dart';
 
 // Project imports:
@@ -42,11 +38,6 @@ class TextEditorConfigs
     this.layerFractionalOffset = const Offset(-0.5, -0.5),
     this.enableGesturePop = true,
     this.enableSuggestions = true,
-    @Deprecated(
-      'Use tools inside MainEditorConfigs instead, e.g. tools: '
-      '[SubEditorMode.text]',
-    )
-    this.enabled = true,
     this.enableEdit = true,
     this.enableAutocorrect = true,
     this.showSelectFontStyleBottomBar = false,
@@ -54,7 +45,9 @@ class TextEditorConfigs
     this.showFontScaleButton = true,
     this.showBackgroundModeButton = true,
     this.enableMainEditorZoomFactor = false,
+    this.enableTapOutsideToSave = true,
     this.enableAutoOverflow = true,
+    this.enableAutoWrapOnLayer = true,
     this.initFontSize = 24.0,
     this.initialPrimaryColor = const Color(0xFF000000),
     this.initialSecondaryColor,
@@ -72,9 +65,13 @@ class TextEditorConfigs
     this.style = const TextEditorStyle(),
     this.icons = const TextEditorIcons(),
     this.widgets = const TextEditorWidgets(),
-  })  : assert(initFontSize > 0, 'initFontSize must be positive'),
-        assert(maxScale >= minScale,
-            'maxScale must be greater than or equal to minScale');
+    this.enableImageBoundaryTextWrap = false,
+    this.resizeToAvoidBottomInset = true,
+  }) : assert(initFontSize > 0, 'initFontSize must be positive'),
+       assert(
+         maxScale >= minScale,
+         'maxScale must be greater than or equal to minScale',
+       );
 
   /// {@macro layerFractionalOffset}
   @override
@@ -83,13 +80,6 @@ class TextEditorConfigs
   /// {@macro enableGesturePop}
   @override
   final bool enableGesturePop;
-
-  /// Indicates whether the text editor is enabled.
-  @Deprecated(
-    'Use tools inside MainEditorConfigs instead, e.g. tools: '
-    '[SubEditorMode.text]',
-  )
-  final bool enabled;
 
   /// Indicating whether created layers can be edited.
   final bool enableEdit;
@@ -110,6 +100,14 @@ class TextEditorConfigs
   /// A flag to enable or disable scaling of the text field in sync with the
   /// editor's zoom level.
   final bool enableMainEditorZoomFactor;
+
+  /// Whether tapping outside the text field saves the text annotation.
+  ///
+  /// When `true` (default), tapping outside the text input area will save
+  /// the current text and close the editor. When `false`, tapping outside
+  /// will not trigger the save action, requiring users to use the done
+  /// button or other explicit save actions.
+  final bool enableTapOutsideToSave;
 
   /// The initial font size for text.
   final double initFontSize;
@@ -158,6 +156,17 @@ class TextEditorConfigs
   /// (e.g., the screen width).
   final bool enableAutoOverflow;
 
+  /// Whether the text should automatically wrap when it reaches the end of
+  /// the screen on the final image.
+  ///
+  /// If set to `true`, the text will wrap to the next line instead of
+  /// overflowing, ensuring it stays within the visible area
+  /// (e.g., the screen width).
+  ///
+  /// If set to `false`, the text will only wrap if the user deliberately
+  /// entered a new line while editing.
+  final bool enableAutoWrapOnLayer;
+
   /// The minimum scale factor from the layer.
   final double minScale;
 
@@ -191,6 +200,16 @@ class TextEditorConfigs
   /// Widgets associated with the text editor.
   final TextEditorWidgets widgets;
 
+  /// Enable automatic text wrapping when text reach the image boundaries
+  final bool enableImageBoundaryTextWrap;
+
+  /// Whether the Scaffold should resize to avoid the bottom inset (keyboard).
+  ///
+  /// When `true` (default), the editor will resize when the keyboard appears.
+  /// When `false`, the editor will not resize and the keyboard may overlap
+  /// the content.
+  final bool resizeToAvoidBottomInset;
+
   /// Creates a copy of this `TextEditorConfigs` object with the given fields
   /// replaced with new values.
   ///
@@ -200,11 +219,12 @@ class TextEditorConfigs
   TextEditorConfigs copyWith({
     Offset? layerFractionalOffset,
     bool? enableGesturePop,
-    bool? enabled,
     bool? enableEdit,
     bool? showSelectFontStyleBottomBar,
     bool? enableMainEditorZoomFactor,
+    bool? enableTapOutsideToSave,
     bool? enableAutoOverflow,
+    bool? enableAutoWrapOnLayer,
     Color? initialPrimaryColor,
     Color? initialSecondaryColor,
     double? initFontSize,
@@ -224,19 +244,27 @@ class TextEditorConfigs
     TextEditorStyle? style,
     TextEditorIcons? icons,
     TextEditorWidgets? widgets,
+    bool? enableImageBoundaryTextWrap,
+    bool? showBackgroundModeButton,
+    bool? showFontScaleButton,
+    bool? showTextAlignButton,
+    bool? resizeToAvoidBottomInset,
   }) {
     return TextEditorConfigs(
       layerFractionalOffset:
           layerFractionalOffset ?? this.layerFractionalOffset,
       enableGesturePop: enableGesturePop ?? this.enableGesturePop,
       safeArea: safeArea ?? this.safeArea,
-      enabled: enabled ?? this.enabled,
       enableEdit: enableEdit ?? this.enableEdit,
       showSelectFontStyleBottomBar:
           showSelectFontStyleBottomBar ?? this.showSelectFontStyleBottomBar,
       enableMainEditorZoomFactor:
           enableMainEditorZoomFactor ?? this.enableMainEditorZoomFactor,
+      enableTapOutsideToSave:
+          enableTapOutsideToSave ?? this.enableTapOutsideToSave,
       enableAutoOverflow: enableAutoOverflow ?? this.enableAutoOverflow,
+      enableAutoWrapOnLayer:
+          enableAutoWrapOnLayer ?? this.enableAutoWrapOnLayer,
       initialPrimaryColor: initialPrimaryColor ?? this.initialPrimaryColor,
       initialSecondaryColor:
           initialSecondaryColor ?? this.initialSecondaryColor,
@@ -257,6 +285,14 @@ class TextEditorConfigs
       style: style ?? this.style,
       icons: icons ?? this.icons,
       widgets: widgets ?? this.widgets,
+      enableImageBoundaryTextWrap:
+          enableImageBoundaryTextWrap ?? this.enableImageBoundaryTextWrap,
+      showBackgroundModeButton:
+          showBackgroundModeButton ?? this.showBackgroundModeButton,
+      showFontScaleButton: showFontScaleButton ?? this.showFontScaleButton,
+      showTextAlignButton: showTextAlignButton ?? this.showTextAlignButton,
+      resizeToAvoidBottomInset:
+          resizeToAvoidBottomInset ?? this.resizeToAvoidBottomInset,
     );
   }
 }
