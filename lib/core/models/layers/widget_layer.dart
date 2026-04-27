@@ -46,6 +46,13 @@ class WidgetLayer extends Layer {
     super.boxConstraints,
     super.key,
     super.groupId,
+    super.startTime,
+    super.endTime,
+    super.enterDuration,
+    super.exitDuration,
+    super.enterCurve,
+    super.exitCurve,
+    super.transitionBuilder,
   });
 
   /// Factory constructor for creating a WidgetLayer instance from a
@@ -129,6 +136,10 @@ class WidgetLayer extends Layer {
       scale: layer.scale,
       meta: layer.meta,
       groupId: layer.groupId,
+      startTime: layer.startTime,
+      endTime: layer.endTime,
+      enterDuration: layer.enterDuration,
+      exitDuration: layer.exitDuration,
       widget: widget,
       width: layerWidth != null ? safeParseDouble(layerWidth) : null,
       exportConfigs: exportConfigs,
@@ -215,6 +226,13 @@ class WidgetLayer extends Layer {
     BoxConstraints? boxConstraints,
     WidgetLayerExportConfigs? exportConfigs,
     String? groupId,
+    Duration? startTime,
+    Duration? endTime,
+    Duration? enterDuration,
+    Duration? exitDuration,
+    Curve? enterCurve,
+    Curve? exitCurve,
+    LayerTimelineTransitionBuilder? transitionBuilder,
   }) {
     return WidgetLayer(
       widget: widget ?? this.widget,
@@ -230,6 +248,13 @@ class WidgetLayer extends Layer {
       groupId: groupId ?? this.groupId,
       meta: meta ?? this.meta,
       boxConstraints: boxConstraints ?? this.boxConstraints,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      enterDuration: enterDuration ?? this.enterDuration,
+      exitDuration: exitDuration ?? this.exitDuration,
+      enterCurve: enterCurve ?? this.enterCurve,
+      exitCurve: exitCurve ?? this.exitCurve,
+      transitionBuilder: transitionBuilder ?? this.transitionBuilder,
     );
   }
 

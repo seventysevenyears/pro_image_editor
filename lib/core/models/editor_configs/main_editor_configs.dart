@@ -44,6 +44,8 @@ class MainEditorConfigs extends ZoomConfigs {
       // SubEditorMode.sticker,
     ],
     this.enableSubEditorPage = false,
+    this.captureImageOnDone = true,
+    this.captureLayersOnDone = false,
     this.style = const MainEditorStyle(),
     this.icons = const MainEditorIcons(),
     this.widgets = const MainEditorWidgets(),
@@ -98,6 +100,20 @@ class MainEditorConfigs extends ZoomConfigs {
   /// Defines the safe area configuration for the editor.
   final EditorSafeArea safeArea;
 
+  /// Whether to capture all active layers as images when [doneEditing] is
+  /// called and include them in [CompleteParameters.capturedLayers].
+  ///
+  /// Defaults to `false`. Enable this when you need individual layer images
+  /// for further processing (e.g. video rendering).
+  final bool captureLayersOnDone;
+
+  /// Whether to generate the final image bytes via `captureEditorImage()` when
+  /// [doneEditing] is called.
+  ///
+  /// If disabled, [onImageEditingComplete] is not called and
+  /// [CompleteParameters.image] contains empty bytes.
+  final bool captureImageOnDone;
+
   /// Whether to use the sub-editor page without pushing a new route.
   final bool enableSubEditorPage;
 
@@ -151,9 +167,13 @@ class MainEditorConfigs extends ZoomConfigs {
     EditorSafeArea? safeArea,
     List<SubEditorMode>? tools,
     bool? enableSubEditorPage,
+    bool? captureImageOnDone,
+    bool? captureLayersOnDone,
   }) {
     return MainEditorConfigs(
       enableSubEditorPage: enableSubEditorPage ?? this.enableSubEditorPage,
+      captureImageOnDone: captureImageOnDone ?? this.captureImageOnDone,
+      captureLayersOnDone: captureLayersOnDone ?? this.captureLayersOnDone,
       enableCloseButton: enableCloseButton ?? this.enableCloseButton,
       enableKeyboardShortcuts:
           enableKeyboardShortcuts ?? this.enableKeyboardShortcuts,

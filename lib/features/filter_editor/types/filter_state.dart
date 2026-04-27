@@ -1,25 +1,35 @@
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 
-import '/core/constants/int_constants.dart';
-import '/shared/extensions/num_extension.dart';
 import '/shared/utils/parser/curve_parser.dart';
-import '/shared/utils/parser/double_parser.dart';
 
-/// A class representing the adjustment matrix for a tune adjustment item.
+import 'filter_matrix.dart';
+
+/// Extension on a list of [FilterState] objects to conveniently access
+/// all combined filter matrices.
+extension FilterStateListExtension on List<FilterState> {
+  /// Returns all [FilterMatrix] entries from every [FilterState] in the list,
+  /// flattened into a single [FilterMatrix].
+  FilterMatrix get allMatrices => expand((f) => f.matrices).toList();
+}
+
+/// Wraps a [FilterMatrix] together with optional video-timeline metadata.
 ///
-/// This class holds the adjustment [id], the [value] of the adjustment, and
-/// the corresponding transformation [matrix] that applies the adjustment.
-class TuneAdjustmentMatrix {
-  /// Creates a [TuneAdjustmentMatrix] instance from a [Map] representation.
-  ///
-  /// This factory constructor extracts [id], [value], and [matrix] from the
-  /// provided [map].
-  factory TuneAdjustmentMatrix.fromMap(Map<String, dynamic> map) {
-    return TuneAdjustmentMatrix(
-      id: map['id']?.toString() ?? '-',
-      value: safeParseDouble(map['value']?.toString()),
-      matrix: (map['matrix'] as List?)?.map(safeParseDouble).toList() ?? [],
+/// When used outside the video editor every timeline field stays `null` and
+/// the filter simply applies unconditionally.
+class FilterState {
+  /// Creates a [FilterState] instance from a [Map] representation.
+  factory FilterState.fromMap(Map<String, dynamic> map) {
+    return FilterState(
+      id: (map['id'] as String?) ?? _generateId(),
+      name: map['name'] as String? ?? '',
+      matrices:
+          (map['matrices'] as List?)
+              ?.map(
+                (e) => (e as List).map((v) => (v as num).toDouble()).toList(),
+              )
+              .toList() ??
+          [],
       startTime: map['startTime'] != null
           ? Duration(milliseconds: map['startTime'] as int)
           : null,
@@ -38,16 +48,11 @@ class TuneAdjustmentMatrix {
     );
   }
 
-  /// Creates a [TuneAdjustmentMatrix] with the given [id], [value], and
-  /// [matrix].
-  ///
-  /// - [id] is the unique identifier for the adjustment.
-  /// - [value] is the adjustment value.
-  /// - [matrix] is a list of doubles representing the matrix transformation.
-  TuneAdjustmentMatrix({
-    required this.id,
-    required this.value,
-    required this.matrix,
+  /// Creates a [FilterState] with the given fields.
+  FilterState({
+    String? id,
+    required this.name,
+    this.matrices = const [],
     this.startTime,
     this.endTime,
     this.enterDuration,
@@ -55,23 +60,29 @@ class TuneAdjustmentMatrix {
     this.enterCurve,
     this.exitCurve,
     this.meta = const {},
-  });
+  }) : id = id ?? _generateId();
+  static int _idCounter = 0;
 
-  /// The unique identifier for the tune adjustment.
+  static String _generateId() {
+    _idCounter++;
+    return 'filter-${DateTime.now().microsecondsSinceEpoch}-$_idCounter';
+  }
+
+  /// A unique identifier for this filter state.
   final String id;
 
-  /// The value of the tune adjustment.
-  final double value;
+  /// The name of the filter.
+  final String name;
 
-  /// The transformation matrix associated with the tune adjustment.
-  final List<double> matrix;
+  /// The color-filter matrices that make up this filter effect.
+  final FilterMatrix matrices;
 
-  /// The time at which this adjustment becomes active.
+  /// The time at which this filter becomes active.
   ///
   /// Only used in the video editor. When `null`, always active.
   final Duration? startTime;
 
-  /// The time at which this adjustment becomes inactive.
+  /// The time at which this filter becomes inactive.
   ///
   /// Only used in the video editor. When `null`, always active.
   final Duration? endTime;
@@ -88,19 +99,21 @@ class TuneAdjustmentMatrix {
   /// The curve applied to the exit transition.
   final Curve? exitCurve;
 
-  /// User-defined metadata that can be attached to this tune adjustment.
+  /// User-defined metadata that can be attached to this filter state.
   final Map<String, dynamic> meta;
 
-  /// Converts this [TuneAdjustmentMatrix] instance into a [Map] representation.
-  ///
-  /// The map contains the [id], [value], and [matrix] as key-value pairs.
-  Map<String, dynamic> toMap({int maxDecimalPlaces = kMaxSafeDecimalPlaces}) {
+  /// Whether [matrices] contains at least one matrix.
+  bool get isNotEmpty => matrices.isNotEmpty;
+
+  /// Whether [matrices] is empty.
+  bool get isEmpty => matrices.isEmpty;
+
+  /// Converts this instance into a [Map] representation.
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'value': value.roundSmart(maxDecimalPlaces),
-      'matrix': matrix
-          .map((value) => value.roundSmart(maxDecimalPlaces))
-          .toList(),
+      if (name.isNotEmpty) 'name': name,
+      'matrices': matrices,
       if (startTime != null) 'startTime': startTime!.inMilliseconds,
       if (endTime != null) 'endTime': endTime!.inMilliseconds,
       if (enterDuration != null) 'enterDuration': enterDuration!.inMilliseconds,
@@ -111,30 +124,11 @@ class TuneAdjustmentMatrix {
     };
   }
 
-  /// Creates a copy of this [TuneAdjustmentMatrix] instance with the same
-  /// values.
-  ///
-  /// The [copy] method allows duplicating the matrix with identical properties.
-  TuneAdjustmentMatrix copy() {
-    return TuneAdjustmentMatrix(
-      id: id,
-      value: value,
-      matrix: [...matrix],
-      startTime: startTime,
-      endTime: endTime,
-      enterDuration: enterDuration,
-      exitDuration: exitDuration,
-      enterCurve: enterCurve,
-      exitCurve: exitCurve,
-      meta: {...meta},
-    );
-  }
-
   /// Creates a copy of this instance with the given fields replaced.
-  TuneAdjustmentMatrix copyWith({
+  FilterState copyWith({
     String? id,
-    double? value,
-    List<double>? matrix,
+    String? name,
+    FilterMatrix? matrices,
     Duration? startTime,
     Duration? endTime,
     Duration? enterDuration,
@@ -143,10 +137,10 @@ class TuneAdjustmentMatrix {
     Curve? exitCurve,
     Map<String, dynamic>? meta,
   }) {
-    return TuneAdjustmentMatrix(
+    return FilterState(
       id: id ?? this.id,
-      value: value ?? this.value,
-      matrix: matrix ?? [...this.matrix],
+      name: name ?? this.name,
+      matrices: matrices ?? this.matrices.map((row) => [...row]).toList(),
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       enterDuration: enterDuration ?? this.enterDuration,
@@ -157,14 +151,34 @@ class TuneAdjustmentMatrix {
     );
   }
 
+  /// Creates a deep copy of this instance.
+  FilterState copy() {
+    return FilterState(
+      id: id,
+      name: name,
+      matrices: matrices.map((row) => [...row]).toList(),
+      startTime: startTime,
+      endTime: endTime,
+      enterDuration: enterDuration,
+      exitDuration: exitDuration,
+      enterCurve: enterCurve,
+      exitCurve: exitCurve,
+      meta: {...meta},
+    );
+  }
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
+    if (other is! FilterState) return false;
 
-    return other is TuneAdjustmentMatrix &&
-        other.id == id &&
-        other.value == value &&
-        listEquals(other.matrix, matrix) &&
+    if (matrices.length != other.matrices.length) return false;
+    for (var i = 0; i < matrices.length; i++) {
+      if (!listEquals(matrices[i], other.matrices[i])) return false;
+    }
+
+    return other.id == id &&
+        other.name == name &&
         other.startTime == startTime &&
         other.endTime == endTime &&
         other.enterDuration == enterDuration &&
@@ -177,8 +191,8 @@ class TuneAdjustmentMatrix {
   @override
   int get hashCode =>
       id.hashCode ^
-      value.hashCode ^
-      matrix.hashCode ^
+      name.hashCode ^
+      matrices.hashCode ^
       startTime.hashCode ^
       endTime.hashCode ^
       enterDuration.hashCode ^
