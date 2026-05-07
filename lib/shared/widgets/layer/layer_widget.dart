@@ -422,6 +422,7 @@ class _LayerWidgetState extends State<LayerWidget>
                       emojiEditorConfigs: emojiEditorConfigs,
                       textEditorConfigs: textEditorConfigs,
                       stickerEditorConfigs: stickerEditorConfigs,
+                      templateEditorConfigs: templateEditorConfigs,
                       paintEditorConfigs: paintEditorConfigs,
                       designMode: designMode,
                     ),
@@ -493,6 +494,7 @@ class _LayerContentItem extends StatelessWidget {
     required this.textEditorConfigs,
     required this.stickerEditorConfigs,
     required this.paintEditorConfigs,
+    required this.templateEditorConfigs,
     required this.designMode,
   });
 
@@ -505,6 +507,7 @@ class _LayerContentItem extends StatelessWidget {
   final EmojiEditorConfigs emojiEditorConfigs;
   final TextEditorConfigs textEditorConfigs;
   final StickerEditorConfigs stickerEditorConfigs;
+  final TemplateEditorConfigs templateEditorConfigs;
   final PaintEditorConfigs paintEditorConfigs;
   final ImageEditorDesignMode designMode;
 
@@ -533,7 +536,7 @@ class _LayerContentItem extends StatelessWidget {
         );
       case LayerWidgetType.template:
         content = LayerWidgetTemplateItem(
-          layer: _layer as TemplateLayer,
+          layer: layer as TemplateLayer,
           templateEditorConfigs: templateEditorConfigs,
         );
       case LayerWidgetType.canvas:

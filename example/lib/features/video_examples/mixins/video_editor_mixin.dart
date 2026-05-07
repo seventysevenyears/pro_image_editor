@@ -376,81 +376,81 @@ mixin VideoEditorMixin<T extends StatefulWidget> on State<T> {
     }).toList();
 
     // Extract custom audio paths and volume settings
-    final customAudioTracks = await _buildVideoAudioTracks(
-      parameters.audioTracks,
-      directory.path,
-    );
+    // final customAudioTracks = await _buildVideoAudioTracks(
+    //   parameters.audioTracks,
+    //   directory.path,
+    // );
     final originalVolume = _calculateOriginalVolume(parameters.audioTracks);
 
     // Use videoSegments when multiple clips exist, otherwise use single video
     final useSegments = videoSegments.length > 1;
 
-    var exportModel = VideoRenderData(
-      id: taskId,
-      videoSegments: useSegments
-          ? videoSegments
-              .map((video) => video.copyWith(volume: originalVolume))
-              .toList()
-          : [VideoSegment(video: video, volume: originalVolume)],
-      imageLayers: [
-        if (parameters.layers.isNotEmpty)
-          ImageLayer(image: EditorLayerImage.memory(parameters.image))
-      ],
-      blur: parameters.blur,
-      colorFilters: [ColorFilter(matrix: parameters.colorFiltersCombined)],
-      startTime: useSegments ? null : parameters.startTime,
-      endTime: useSegments ? null : parameters.endTime,
-      transform: parameters.isTransformed
-          ? ExportTransform(
-              width: parameters.cropWidth,
-              height: parameters.cropHeight,
-              rotateTurns: 4 - parameters.rotateTurns,
-              x: parameters.cropX,
-              y: parameters.cropY,
-              flipX: parameters.flipX,
-              flipY: parameters.flipY,
-            )
-          : null,
-      enableAudio: proVideoController?.isAudioEnabled ?? true,
-      outputFormat: outputFormat,
-      bitrate: videoMetadata.bitrate,
-      audioTracks: customAudioTracks,
-    );
+    // var exportModel = VideoRenderData(
+    //   id: taskId,
+    //   videoSegments: useSegments
+    //       ? videoSegments
+    //           .map((video) => video.copyWith(volume: originalVolume))
+    //           .toList()
+    //       : [VideoSegment(video: video, volume: originalVolume)],
+    //   imageLayers: [
+    //     if (parameters.layers.isNotEmpty)
+    //       ImageLayer(image: EditorLayerImage.memory(parameters.image))
+    //   ],
+    //   blur: parameters.blur,
+    //   colorFilters: [ColorFilter(matrix: parameters.colorFiltersCombined)],
+    //   startTime: useSegments ? null : parameters.startTime,
+    //   endTime: useSegments ? null : parameters.endTime,
+    //   transform: parameters.isTransformed
+    //       ? ExportTransform(
+    //           width: parameters.cropWidth,
+    //           height: parameters.cropHeight,
+    //           rotateTurns: 4 - parameters.rotateTurns,
+    //           x: parameters.cropX,
+    //           y: parameters.cropY,
+    //           flipX: parameters.flipX,
+    //           flipY: parameters.flipY,
+    //         )
+    //       : null,
+    //   enableAudio: proVideoController?.isAudioEnabled ?? true,
+    //   outputFormat: outputFormat,
+    //   bitrate: videoMetadata.bitrate,
+    //   audioTracks: customAudioTracks,
+    // );
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    _outputPath = await ProVideoEditor.instance.renderVideoToFile(
-      '${directory.path}/my_video_$now.mp4',
-      exportModel,
-    );
+    // _outputPath = await ProVideoEditor.instance.renderVideoToFile(
+    //   '${directory.path}/my_video_$now.mp4',
+    //   exportModel,
+    // );
     videoGenerationTime = stopwatch.elapsed;
   }
 
   /// Builds [VideoAudioTrack] list from the given [tracks].
-  Future<List<VideoAudioTrack>> _buildVideoAudioTracks(
-    List<AudioTrack> tracks,
-    String directoryPath,
-  ) async {
-    final result = <VideoAudioTrack>[];
-    for (var i = 0; i < tracks.length; i++) {
-      final track = tracks[i];
-      final path = await _resolveAudioPath(track, directoryPath, i);
-      if (path == null) continue;
+  // Future<List<VideoAudioTrack>> _buildVideoAudioTracks(
+  //   List<AudioTrack> tracks,
+  //   String directoryPath,
+  // ) async {
+  //   final result = <VideoAudioTrack>[];
+  //   for (var i = 0; i < tracks.length; i++) {
+  //     final track = tracks[i];
+  //     final path = await _resolveAudioPath(track, directoryPath, i);
+  //     if (path == null) continue;
 
-      final balance = track.volumeBalance;
-      final customVolume = (1.0 + balance) / 2.0;
+  //     final balance = track.volumeBalance;
+  //     final customVolume = (1.0 + balance) / 2.0;
 
-      result.add(VideoAudioTrack(
-        path: path,
-        volume: track.volume * customVolume,
-        loop: track.loop,
-        audioStartTime: track.audioStartTime,
-        audioEndTime: track.audioEndTime,
-        startTime: track.startTime,
-        endTime: track.endTime,
-      ));
-    }
-    return result;
-  }
+  //     result.add(VideoAudioTrack(
+  //       path: path,
+  //       volume: track.volume * customVolume,
+  //       loop: track.loop,
+  //       audioStartTime: track.audioStartTime,
+  //       audioEndTime: track.audioEndTime,
+  //       startTime: track.startTime,
+  //       endTime: track.endTime,
+  //     ));
+  //   }
+  //   return result;
+  // }
 
   /// Returns a local file path for the given [track]'s audio source.
   Future<String?> _resolveAudioPath(

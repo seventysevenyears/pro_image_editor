@@ -184,7 +184,6 @@ class WidgetLayer extends Layer {
       ),
       'recordPosition': ?recordPosition,
       if (width != null) 'width': width,
-      if (width != null) 'width': width,
       if (exportConfigMap.isNotEmpty) 'exportConfigs': exportConfigMap,
       'type': 'widget',
     };

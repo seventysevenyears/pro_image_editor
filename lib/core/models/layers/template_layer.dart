@@ -39,6 +39,13 @@ class TemplateLayer extends Layer {
     super.flipX,
     super.flipY,
     super.interaction,
+    super.startTime,
+    super.endTime,
+    super.enterDuration,
+    super.exitDuration,
+    super.enterCurve,
+    super.exitCurve,
+    super.transitionBuilder,
     this.exportConfigs = const TemplateLayerExportConfigs(),
     super.meta,
     super.boxConstraints,
@@ -60,11 +67,13 @@ class TemplateLayer extends Layer {
 
     /// Determines the position of the widget in the list.
     int widgetPosition = safeParseInt(
-        map[keyConverter('recordPosition')] ?? map['listPosition'],
-        fallback: -1);
+      map[keyConverter('recordPosition')] ?? map['listPosition'],
+      fallback: -1,
+    );
 
-    var exportConfigs =
-        TemplateLayerExportConfigs.fromMap(map[keyConverter('exportConfigs')]);
+    var exportConfigs = TemplateLayerExportConfigs.fromMap(
+      map[keyConverter('exportConfigs')],
+    );
 
     /// Widget to display a widget or a placeholder if not found.
     Widget widget = kDebugMode
@@ -135,6 +144,13 @@ class TemplateLayer extends Layer {
       height: exportConfigs.height,
       exportConfigs: exportConfigs,
       boxConstraints: layer.boxConstraints,
+      startTime: layer.startTime,
+      endTime: layer.endTime,
+      enterDuration: layer.enterDuration,
+      exitDuration: layer.exitDuration,
+      enterCurve: layer.enterCurve,
+      exitCurve: layer.exitCurve,
+      transitionBuilder: layer.transitionBuilder,
     );
   }
 
@@ -186,8 +202,10 @@ class TemplateLayer extends Layer {
   }) {
     var exportConfigMap = exportConfigs.toMap();
 
+    print("exportConfigMap: $exportConfigMap");
+
     return {
-      ...super.toMap(
+      ...super.toMap(  
         maxDecimalPlaces: maxDecimalPlaces,
         enableMinify: enableMinify,
       ),
@@ -235,6 +253,13 @@ class TemplateLayer extends Layer {
     String? groupId,
     Map<String, dynamic>? meta,
     BoxConstraints? boxConstraints,
+    Duration? startTime,
+    Duration? endTime,
+    Duration? enterDuration,
+    Duration? exitDuration,
+    Curve? enterCurve,
+    Curve? exitCurve,
+    LayerTimelineTransitionBuilder? transitionBuilder,
   }) {
     return TemplateLayer(
       widget: widget ?? this.widget,
@@ -247,15 +272,25 @@ class TemplateLayer extends Layer {
       flipY: flipY ?? this.flipY,
       interaction: interaction ?? this.interaction,
       exportConfigs: exportConfigs ?? this.exportConfigs,
-    )..groupId = groupId ?? this.groupId;
+      groupId: groupId ?? this.groupId,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      enterDuration: enterDuration ?? this.enterDuration,
+      exitDuration: exitDuration ?? this.exitDuration,
+      enterCurve: enterCurve ?? this.enterCurve,
+      exitCurve: exitCurve ?? this.exitCurve,
+      transitionBuilder: transitionBuilder ?? this.transitionBuilder,
+    );
   }
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty<TemplateLayerExportConfigs>(
-      'exportConfigs',
-      exportConfigs,
-    ));
+    properties.add(
+      DiagnosticsProperty<TemplateLayerExportConfigs>(
+        'exportConfigs',
+        exportConfigs,
+      ),
+    );
   }
 }

@@ -20,7 +20,7 @@ screenshots:
   - description: "Showcase from the image editor with the WhatsApp design"
     path: assets/showcase-whatsapp.jpg
   - description: "Showcase from the image editor with simple design"
-    path: assets/showcase.jpg
+    path: assets/showcase.jpg 
 
 platforms:
   android:

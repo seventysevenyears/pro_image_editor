@@ -302,6 +302,7 @@ class ExportStateHistory {
     for (var layer in element.layers) {
       if ((_configs.exportPaint && layer.isPaintLayer) ||
           (_configs.exportText && layer.isTextLayer) ||
+          (_configs.exportTemplate && layer.isTemplateLayer) ||
           (_configs.exportEmoji && layer.isEmojiLayer)) {
         updateReference(layer);
       } else if (_configs.exportWidgets && layer.isWidgetLayer) {

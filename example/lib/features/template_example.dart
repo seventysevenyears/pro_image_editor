@@ -73,6 +73,15 @@ class _TemplateExampleState extends State<TemplateExample>
     return templatesDir.path;
   }
 
+  Future<String> _getLayerExportsDirectory() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final exportsDir = Directory('${directory.path}/layer_exports');
+    if (!await exportsDir.exists()) {
+      await exportsDir.create(recursive: true);
+    }
+    return exportsDir.path;
+  }
+
   /// JSON 템플릿을 수정하는 함수
   /// references의 모든 내용을 새로운 "A" 위젯의 meta에 복사
   Map<String, dynamic>? _modifyTemplateJson(Map<String, dynamic> jsonMap) {
@@ -206,7 +215,7 @@ class _TemplateExampleState extends State<TemplateExample>
         ),
       );
 
-      print('history: $history');
+      print('history: ${await history.toJson()}');
 
       final templatesDir = await _getTemplatesDirectory();
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
@@ -224,6 +233,101 @@ class _TemplateExampleState extends State<TemplateExample>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('저장 실패: $e')),
+      );
+    }
+  }
+
+  Future<void> _exportLayerState() async {
+    try {
+      final editor = editorKey.currentState;
+      if (editor == null) return;
+
+      final history = await editor.exportStateHistory(
+        configs: const ExportEditorConfigs(
+          historySpan: ExportHistorySpan.current,
+          maxDecimalPlaces: 3,
+          enableMinify: false,
+        ),
+      );
+
+      final exportsDir = await _getLayerExportsDirectory();
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final filename = 'layers_$timestamp.json';
+      final filePath = '$exportsDir/$filename';
+
+      await history.toFile(path: filePath);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레이어보냄: $filename')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레이어보내기 실패: $e')),
+      );
+    }
+  }
+
+  Future<void> _importLayerState() async {
+    try {
+      final exportsDir = await _getLayerExportsDirectory();
+      final dir = Directory(exportsDir);
+      final files = await dir
+          .list()
+          .where((file) => file.path.endsWith('.json'))
+          .toList();
+
+      if (files.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('저장된 레이어 파일이 없습니다')),
+        );
+        return;
+      }
+
+      files.sort((a, b) => b.path.compareTo(a.path));
+
+      if (!mounted) return;
+      final selectedFile = await showDialog<String>(
+        context: context,
+        builder: (context) => _buildLayerExportListDialog(files),
+      );
+
+      if (selectedFile == null || !mounted) return;
+
+      final file = File(selectedFile);
+      final jsonString = await file.readAsString();
+      final jsonMap = json.decode(jsonString) as Map<String, dynamic>;
+
+      final history = ImportStateHistory.fromMap(
+        jsonMap,
+        configs: ImportEditorConfigs(
+          recalculateSizeAndPosition: true,
+          widgetLoader: widgetCustomLoader,
+        ),
+      );
+
+      setState(() {
+        _loadedHistory = history;
+        _templateCreated = false;
+      });
+
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (!mounted) return;
+      setState(() {
+        _templateCreated = true;
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('레이어 불러옴')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('레이어 불러오기 실패: $e')),
       );
     }
   }
@@ -429,6 +533,38 @@ class _TemplateExampleState extends State<TemplateExample>
     );
   }
 
+  Widget _buildLayerExportListDialog(List<FileSystemEntity> files) {
+    return AlertDialog(
+      title: const Text('레이어 파일 선택'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: files.length,
+          itemBuilder: (context, index) {
+            final file = files[index];
+            final filename = file.path.split('/').last.split('\\').last;
+            final timestamp =
+                filename.replaceAll('layers_', '').replaceAll('.json', '');
+
+            return ListTile(
+              leading: const Icon(Icons.upload_file),
+              title: Text(filename),
+              subtitle: Text('생성일: ${_formatTimestamp(timestamp)}'),
+              onTap: () => Navigator.pop(context, file.path),
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('취소'),
+        ),
+      ],
+    );
+  }
+
   String _formatTimestamp(String timestamp) {
     try {
       final dateTime = DateFormat('yyyyMMdd_HHmmss').parse(timestamp);
@@ -476,6 +612,50 @@ class _TemplateExampleState extends State<TemplateExample>
               color: Colors.white,
             ),
             tooltip: '템플릿 로드',
+          ),
+        );
+      },
+    );
+  }
+
+  ReactiveWidget _buildExportLayersButton(Stream<void> rebuildStream) {
+    return ReactiveWidget(
+      stream: rebuildStream,
+      builder: (_) {
+        return Positioned(
+          top: 200,
+          left: 20,
+          child: FloatingActionButton(
+            heroTag: 'export_layers_button',
+            onPressed: _exportLayerState,
+            backgroundColor: Colors.lightBlue,
+            child: const Icon(
+              Icons.send_to_mobile_outlined,
+              color: Colors.white,
+            ),
+            tooltip: '레이어보내기',
+          ),
+        );
+      },
+    );
+  }
+
+  ReactiveWidget _buildImportLayersButton(Stream<void> rebuildStream) {
+    return ReactiveWidget(
+      stream: rebuildStream,
+      builder: (_) {
+        return Positioned(
+          top: 270,
+          left: 20,
+          child: FloatingActionButton(
+            heroTag: 'import_layers_button',
+            onPressed: _importLayerState,
+            backgroundColor: Colors.deepPurple,
+            child: const Icon(
+              Icons.upload_file,
+              color: Colors.white,
+            ),
+            tooltip: '레이어 가져오기',
           ),
         );
       },
@@ -870,6 +1050,8 @@ class _TemplateExampleState extends State<TemplateExample>
               return [
                 _buildSaveButton(rebuildStream),
                 _buildLoadButton(rebuildStream),
+                _buildExportLayersButton(rebuildStream),
+                _buildImportLayersButton(rebuildStream),
               ];
             },
           ),

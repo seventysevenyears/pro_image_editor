@@ -16,6 +16,7 @@ class ExportEditorConfigs {
     this.exportFilter = true,
     this.exportTuneAdjustments = true,
     this.exportEmoji = true,
+    this.exportTemplate = true,
     this.exportBlur = true,
     this.exportWidgets = true,
     this.enableMinify = true,
@@ -74,6 +75,11 @@ class ExportEditorConfigs {
   ///
   /// Defaults to `true`.
   final bool exportEmoji;
+
+  /// Whether to export the templates.
+  ///
+  /// Defaults to `true`.
+  final bool exportTemplate;
 
   /// Whether to export the blur state.
   ///
