@@ -64,9 +64,33 @@ class _TemplateExampleState extends State<TemplateExample>
     );
   }
 
+  Future<Directory> _getBaseDownloadsDirectory() async {
+    if (!kIsWeb) {
+      try {
+        if (Platform.isAndroid) {
+          const androidDownloads = '/storage/emulated/0/Download';
+          final dir = Directory(androidDownloads);
+          if (await dir.exists()) {
+            return dir;
+          }
+        } else if (Platform.isWindows ||
+            Platform.isMacOS ||
+            Platform.isLinux) {
+          final dir = await getDownloadsDirectory();
+          if (dir != null) {
+            return dir;
+          }
+        }
+      } catch (e) {
+        print('Downloads 디렉토리 가져오기 실패, 기본 경로로 fallback: $e');
+      }
+    }
+    return await getApplicationDocumentsDirectory();
+  }
+
   Future<String> _getTemplatesDirectory() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final templatesDir = Directory('${directory.path}/templates');
+    final directory = await _getBaseDownloadsDirectory();
+    final templatesDir = Directory('${directory.path}/pro_image_editor/templates');
     if (!await templatesDir.exists()) {
       await templatesDir.create(recursive: true);
     }
@@ -74,8 +98,8 @@ class _TemplateExampleState extends State<TemplateExample>
   }
 
   Future<String> _getLayerExportsDirectory() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final exportsDir = Directory('${directory.path}/layer_exports');
+    final directory = await _getBaseDownloadsDirectory();
+    final exportsDir = Directory('${directory.path}/pro_image_editor/layer_exports');
     if (!await exportsDir.exists()) {
       await exportsDir.create(recursive: true);
     }
@@ -662,6 +686,67 @@ class _TemplateExampleState extends State<TemplateExample>
     );
   }
 
+  void _addTextLayer(String text) {
+    final editor = editorKey.currentState;
+    if (editor == null) return;
+
+    final layer = TextLayer(
+      text: text,
+      colorMode: LayerBackgroundMode.background,
+      color: Colors.white,
+      background: Colors.transparent,
+      align: TextAlign.center,
+    );
+
+    editor.addLayer(layer);
+  }
+
+  ReactiveWidget _buildTemplateTextButtons(Stream<void> rebuildStream) {
+    const presets = <({String label, String text})>[
+      (label: '??Km', text: '??Km'),
+      (label: 'HH:MM', text: 'HH:MM'),
+      (label: 'M’SS”', text: 'M’SS”'),
+    ];
+
+    return ReactiveWidget(
+      stream: rebuildStream,
+      builder: (_) {
+        return Positioned(
+          left: 20,
+          right: 20,
+          bottom: 20,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              for (final preset in presets)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.6),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  onPressed: () => _addTextLayer(preset.text),
+                  child: Text(
+                    preset.label,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget buildTemplate(
     void Function(WidgetLayer widget) setLayer,
     ScrollController scrollController,
@@ -1052,6 +1137,7 @@ class _TemplateExampleState extends State<TemplateExample>
                 _buildLoadButton(rebuildStream),
                 _buildExportLayersButton(rebuildStream),
                 _buildImportLayersButton(rebuildStream),
+                _buildTemplateTextButtons(rebuildStream),
               ];
             },
           ),
