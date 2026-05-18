@@ -73,9 +73,7 @@ class _TemplateExampleState extends State<TemplateExample>
           if (await dir.exists()) {
             return dir;
           }
-        } else if (Platform.isWindows ||
-            Platform.isMacOS ||
-            Platform.isLinux) {
+        } else if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
           final dir = await getDownloadsDirectory();
           if (dir != null) {
             return dir;
@@ -90,7 +88,8 @@ class _TemplateExampleState extends State<TemplateExample>
 
   Future<String> _getTemplatesDirectory() async {
     final directory = await _getBaseDownloadsDirectory();
-    final templatesDir = Directory('${directory.path}/pro_image_editor/templates');
+    final templatesDir =
+        Directory('${directory.path}/pro_image_editor/templates');
     if (!await templatesDir.exists()) {
       await templatesDir.create(recursive: true);
     }
@@ -99,7 +98,8 @@ class _TemplateExampleState extends State<TemplateExample>
 
   Future<String> _getLayerExportsDirectory() async {
     final directory = await _getBaseDownloadsDirectory();
-    final exportsDir = Directory('${directory.path}/pro_image_editor/layer_exports');
+    final exportsDir =
+        Directory('${directory.path}/pro_image_editor/layer_exports');
     if (!await exportsDir.exists()) {
       await exportsDir.create(recursive: true);
     }

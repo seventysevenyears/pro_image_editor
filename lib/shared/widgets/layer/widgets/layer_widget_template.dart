@@ -22,13 +22,18 @@ class LayerWidgetTemplateItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Transform.scale(
-      scale: layer.scale,
-      alignment: Alignment.center,
-      child: Container(
-        width: (layer.width ?? templateEditorConfigs.initWidth),
-        height: (layer.height ?? templateEditorConfigs.initHeight),
-        child: layer.widget,
+    final width = layer.width ?? templateEditorConfigs.initWidth;
+    final height = layer.height ?? templateEditorConfigs.initHeight;
+    return SizedBox(
+      width: width * layer.scale,
+      height: height * layer.scale,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: layer.widget,
+        ),
       ),
     );
   }
